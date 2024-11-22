@@ -11,38 +11,39 @@ ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel I
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
     "Darkness": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "GTO": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "Aversion": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "Bonnebuche": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "LMDF": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "Notorious": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "Percophile": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
     "Tilisquad": {
-        "emoji": "<:joy:1309553141003325481>",
+        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
         "role_id": 1244077334668116050,
     },
 }
+
 
 # French alert messages
 ALERT_MESSAGES = [
