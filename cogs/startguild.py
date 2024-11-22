@@ -88,8 +88,6 @@ class AddNoteView(View):
         super().__init__()
         self.bot = bot
         self.alert_message = alert_message
-        self.won_button_clicked = False
-        self.lost_button_clicked = False
 
         self.add_note_button = Button(
             label="Ajouter une note",
@@ -99,68 +97,13 @@ class AddNoteView(View):
         self.add_note_button.callback = self.add_note_callback
         self.add_item(self.add_note_button)
 
-        self.won_button = Button(
-            label="Gagné",
-            style=discord.ButtonStyle.success,
-            emoji="✅"
-        )
-        self.won_button.callback = self.won_callback
-        self.add_item(self.won_button)
-
-        self.lost_button = Button(
-            label="Perdu",
-            style=discord.ButtonStyle.danger,
-            emoji="❌"
-        )
-        self.lost_button.callback = self.lost_callback
-        self.add_item(self.lost_button)
-
     async def add_note_callback(self, interaction: discord.Interaction):
-        # Check if the user can interact with this
         if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
             await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
             return
 
         modal = NoteModal(self.alert_message)
         await interaction.response.send_modal(modal)
-
-    async def won_callback(self, interaction: discord.Interaction):
-        if self.won_button_clicked:
-            await interaction.response.send_message("Ce bouton a déjà été cliqué.", ephemeral=True)
-            return
-
-        # Mark the alert as won
-        embed = self.alert_message.embeds[0]
-        embed.color = discord.Color.green()
-        embed.set_footer(text="Victoire !")
-        await self.alert_message.edit(embed=embed)
-
-        # Disable the buttons after clicking
-        self.won_button.disabled = True
-        self.lost_button.disabled = True
-        await self.alert_message.edit(view=self)
-
-        self.won_button_clicked = True
-        await interaction.response.send_message("L'alerte est marquée comme gagnée.", ephemeral=True)
-
-    async def lost_callback(self, interaction: discord.Interaction):
-        if self.lost_button_clicked:
-            await interaction.response.send_message("Ce bouton a déjà été cliqué.", ephemeral=True)
-            return
-
-        # Mark the alert as lost
-        embed = self.alert_message.embeds[0]
-        embed.color = discord.Color.red()
-        embed.set_footer(text="Défaite !")
-        await self.alert_message.edit(embed=embed)
-
-        # Disable the buttons after clicking
-        self.won_button.disabled = True
-        self.lost_button.disabled = True
-        await self.alert_message.edit(view=self)
-
-        self.lost_button_clicked = True
-        await interaction.response.send_message("L'alerte est marquée comme perdue.", ephemeral=True)
 
 
 class GuildPingView(View):
@@ -206,7 +149,6 @@ class GuildPingView(View):
 
             sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot, sent_message))
 
-            # Acknowledge the interaction
             await interaction.response.send_message(
                 f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
             )
@@ -233,14 +175,15 @@ class StartGuildCog(commands.Cog):
         message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
-            if message.pinned and message.author == self.bot.user:  # Check if the bot is the author of the pinned message
+            if message.pinned and message.author == self.bot.user:
                 await message.edit(content=message_content, view=view)
-                print("Panel updated.")
                 return
 
         new_message = await channel.send(content=message_content, view=view)
-        print("Panel created.")
+        await new_message.pin()
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(StartGuildCog(bot))  # Make sure to await this properly
+    cog = StartGuildCog(bot)
+    await bot.add_cog(cog)
+    await cog.ensure_panel()
