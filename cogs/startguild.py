@@ -71,6 +71,7 @@ class AlertResponseView(View):
         await interaction.response.send_message("Alerte marquée comme perdue!", ephemeral=True)
 
 
+
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
