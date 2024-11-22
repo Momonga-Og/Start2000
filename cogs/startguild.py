@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ui import View, Button, Modal, TextInput
+from discord.ui import View, Button
 import random
 
 # Configuration
@@ -10,38 +10,14 @@ ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel I
 
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
-    "Darkness": {
-        "emoji": "🌑",
-        "role_id": 1244077334668116050,
-    },
-    "GTO": {
-        "emoji": "🔥",
-        "role_id": 1244077334668116050,
-    },
-    "Aversion": {
-        "emoji": "💀",
-        "role_id": 1244077334668116050,
-    },
-    "Bonnebuche": {
-        "emoji": "🍞",
-        "role_id": 1244077334668116050,
-    },
-    "LMDF": {
-        "emoji": "💪",
-        "role_id": 1244077334668116050,
-    },
-    "Notorious": {
-        "emoji": "⚡",
-        "role_id": 1244077334668116050,
-    },
-    "Percophile": {
-        "emoji": "🎶",
-        "role_id": 1244077334668116050,
-    },
-    "Tilisquad": {
-        "emoji": "👑",
-        "role_id": 1244077334668116050,
-    },
+    "Darkness": {"emoji": "🌑", "role_id": 1244077334668116050},
+    "GTO": {"emoji": "🔥", "role_id": 1244077334668116050},
+    "Aversion": {"emoji": "💀", "role_id": 1244077334668116050},
+    "Bonnebuche": {"emoji": "🍞", "role_id": 1244077334668116050},
+    "LMDF": {"emoji": "💪", "role_id": 1244077334668116050},
+    "Notorious": {"emoji": "⚡", "role_id": 1244077334668116050},
+    "Percophile": {"emoji": "🎶", "role_id": 1244077334668116050},
+    "Tilisquad": {"emoji": "👑", "role_id": 1244077334668116050},
 }
 
 # French alert messages
@@ -53,18 +29,44 @@ ALERT_MESSAGES = [
     "⚠️ {role}, mobilisez votre équipe pour défendre !",
 ]
 
+
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
+
+        # Add alert buttons for guilds
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
             button = Button(
                 label=f"  {guild_name.upper()}  ",
                 emoji=data["emoji"],
-                style=discord.ButtonStyle.primary
+                style=discord.ButtonStyle.primary,
             )
             button.callback = self.create_ping_callback(guild_name, data["role_id"])
             self.add_item(button)
+
+        # Add additional buttons
+        self.add_item(
+            Button(
+                label="Ajouter une Note",
+                style=discord.ButtonStyle.success,
+                custom_id="add_note",
+            )
+        )
+        self.add_item(
+            Button(
+                label="Win",
+                style=discord.ButtonStyle.green,
+                custom_id="win",
+            )
+        )
+        self.add_item(
+            Button(
+                label="Lost",
+                style=discord.ButtonStyle.red,
+                custom_id="lost",
+            )
+        )
 
     def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
@@ -84,23 +86,22 @@ class GuildPingView(View):
                 await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
-            # Send alert to the alert channel
             alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
             embed = discord.Embed(
                 title="🔔 Alerte envoyée !",
                 description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
-                color=discord.Color.red()
+                color=discord.Color.red(),
             )
             embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
 
             await alert_channel.send(f"{alert_message}", embed=embed)
 
-            # Acknowledge the interaction
             await interaction.response.send_message(
                 f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
             )
 
         return callback
+
 
 class StartGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -117,18 +118,18 @@ class StartGuildCog(commands.Cog):
             print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
             return
 
-        print(f"Found guild: {guild.name}, channel: {channel.name}")
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = (
+            "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !\n"
+            "Utilisez les boutons ci-dessous pour des actions supplémentaires."
+        )
 
-        # Check for existing pinned messages
         async for message in channel.history(limit=50):
             if message.pinned and message.author == self.bot.user:
                 await message.edit(content=message_content, view=view)
                 print("Panel updated.")
                 return
 
-        # Create a new message if no existing one is found
         new_message = await channel.send(content=message_content, view=view)
         await new_message.pin()
         print("Panel created and pinned.")
