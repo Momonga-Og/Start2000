@@ -4,43 +4,43 @@ from discord.ui import View, Button, Modal, TextInput
 import random
 
 # Configuration
-GUILD_ID = 1300093554064097400  # Replace with your guild ID
-PING_DEF_CHANNEL_ID = 1307429490158342256  # Replace with your ping channel ID
-ALERTE_DEF_CHANNEL_ID = 1300093554399645715  # Replace with your alert channel ID
+GUILD_ID = 1217700740949348443  # Replace with your guild ID
+PING_DEF_CHANNEL_ID = 1247706162317758597  # Replace with your ping channel ID
+ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel ID
 
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
     "Darkness": {
-        "emoji": "<:Darkness:1307418763276324944>",
-        "role_id": 1300093554064097407,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "GTO": {
-        "emoji": "<:GTO:1307418692992237668>",
-        "role_id": 1300093554080612363,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "Aversion": {
-        "emoji": "<:aversion:1307418759002198086>",
-        "role_id": 1300093554064097409,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "Bonnebuche": {
-        "emoji": "<:bonnebuche:1307418760763670651>",
-        "role_id": 1300093554080612365,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "LMDF": {
-        "emoji": "<:lmdf:1307418765142786179>",
-        "role_id": 1300093554080612364,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "Notorious": {
-        "emoji": "<:notorious:1307418766266728500>",
-        "role_id": 1300093554064097406,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "Percophile": {
-        "emoji": "<:percophile:1307418769764651228>",
-        "role_id": 1300093554080612362,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
     "Tilisquad": {
-        "emoji": "<:tilisquad:1307418771882905600>",
-        "role_id": 1300093554080612367,
+        "emoji": "<:joy:1309553141003325481>",
+        "role_id": 1244077334668116050,
     },
 }
 
