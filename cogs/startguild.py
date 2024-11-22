@@ -242,5 +242,5 @@ class StartGuildCog(commands.Cog):
         print("Panel created.")
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(StartGuildCog(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(StartGuildCog(bot))  # Make sure to await this properly
