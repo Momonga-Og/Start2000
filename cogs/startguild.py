@@ -33,26 +33,11 @@ class AlertResponseView(View):
         super().__init__(timeout=None)
         self.alert_message = alert_message
 
-        # Add buttons
-        self.add_item(
-            Button(label="Ajouter une Note", style=discord.ButtonStyle.primary, custom_id="add_note")
-        )
-        self.add_item(
-            Button(label="Win", style=discord.ButtonStyle.success, custom_id="win")
-        )
-        self.add_item(
-            Button(label="Lost", style=discord.ButtonStyle.danger, custom_id="lost")
-        )
-
-    async def interaction_check(self, interaction: discord.Interaction):
-        return interaction.channel.id == ALERTE_DEF_CHANNEL_ID
-
     @discord.ui.button(label="Ajouter une Note", style=discord.ButtonStyle.primary)
     async def add_note(self, button: Button, interaction: discord.Interaction):
         class NoteModal(Modal):
             def __init__(self):
                 super().__init__(title="Ajouter une Note")
-
                 self.note = TextInput(
                     label="Note",
                     placeholder="Ajoutez une note ici...",
