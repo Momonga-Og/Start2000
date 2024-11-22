@@ -11,47 +11,46 @@ ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel I
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
     "Darkness": {
-        "emoji": "🌑",  # Standard moon emoji
+        "emoji": "🌑",
         "role_id": 1244077334668116050,
     },
     "GTO": {
-        "emoji": "🔥",  # Standard fire emoji
+        "emoji": "🔥",
         "role_id": 1244077334668116050,
     },
     "Aversion": {
-        "emoji": "💀",  # Standard skull emoji
+        "emoji": "💀",
         "role_id": 1244077334668116050,
     },
     "Bonnebuche": {
-        "emoji": "🍞",  # Standard bread emoji
+        "emoji": "🍞",
         "role_id": 1244077334668116050,
     },
     "LMDF": {
-        "emoji": "💪",  # Standard muscle emoji
+        "emoji": "💪",
         "role_id": 1244077334668116050,
     },
     "Notorious": {
-        "emoji": "⚡",  # Standard lightning bolt emoji
+        "emoji": "⚡",
         "role_id": 1244077334668116050,
     },
     "Percophile": {
-        "emoji": "🎶",  # Standard musical notes emoji
+        "emoji": "🎶",
         "role_id": 1244077334668116050,
     },
     "Tilisquad": {
-        "emoji": "👑",  # Standard crown emoji
+        "emoji": "👑",
         "role_id": 1244077334668116050,
     },
 }
 
-
 # French alert messages
 ALERT_MESSAGES = [
-    "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
-    "⚔️ {role}, il est temps de défendre !",
-    "🛡️ {role} Défendez votre guilde !",
-    "💥 {role} est attaquée ! Rejoignez la défense !",
-    "⚠️ {role}, mobilisez votre équipe pour défendre !",
+    "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
+    "⚔️ {role}, il est temps de défendre !",
+    "🛡️ {role} Défendez votre guilde !",
+    "💥 {role} est attaquée ! Rejoignez la défense !",
+    "⚠️ {role}, mobilisez votre équipe pour défendre !",
 ]
 
 
@@ -81,13 +80,16 @@ class NoteModal(Modal):
         embed.add_field(name="📝 Notes", value=updated_notes, inline=False)
 
         await self.message.edit(embed=embed)
-        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
+        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
 
 
 class AddNoteView(View):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot, alert_message: discord.Message):
         super().__init__()
         self.bot = bot
+        self.alert_message = alert_message
+        self.won_button_clicked = False
+        self.lost_button_clicked = False
 
         self.add_note_button = Button(
             label="Ajouter une note",
@@ -97,14 +99,68 @@ class AddNoteView(View):
         self.add_note_button.callback = self.add_note_callback
         self.add_item(self.add_note_button)
 
+        self.won_button = Button(
+            label="Gagné",
+            style=discord.ButtonStyle.success,
+            emoji="✅"
+        )
+        self.won_button.callback = self.won_callback
+        self.add_item(self.won_button)
+
+        self.lost_button = Button(
+            label="Perdu",
+            style=discord.ButtonStyle.danger,
+            emoji="❌"
+        )
+        self.lost_button.callback = self.lost_callback
+        self.add_item(self.lost_button)
+
     async def add_note_callback(self, interaction: discord.Interaction):
         # Check if the user can interact with this
         if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
             await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
             return
 
-        modal = NoteModal(interaction.message)
+        modal = NoteModal(self.alert_message)
         await interaction.response.send_modal(modal)
+
+    async def won_callback(self, interaction: discord.Interaction):
+        if self.won_button_clicked:
+            await interaction.response.send_message("Ce bouton a déjà été cliqué.", ephemeral=True)
+            return
+
+        # Mark the alert as won
+        embed = self.alert_message.embeds[0]
+        embed.color = discord.Color.green()
+        embed.set_footer(text="Victoire !")
+        await self.alert_message.edit(embed=embed)
+
+        # Disable the buttons after clicking
+        self.won_button.disabled = True
+        self.lost_button.disabled = True
+        await self.alert_message.edit(view=self)
+
+        self.won_button_clicked = True
+        await interaction.response.send_message("L'alerte est marquée comme gagnée.", ephemeral=True)
+
+    async def lost_callback(self, interaction: discord.Interaction):
+        if self.lost_button_clicked:
+            await interaction.response.send_message("Ce bouton a déjà été cliqué.", ephemeral=True)
+            return
+
+        # Mark the alert as lost
+        embed = self.alert_message.embeds[0]
+        embed.color = discord.Color.red()
+        embed.set_footer(text="Défaite !")
+        await self.alert_message.edit(embed=embed)
+
+        # Disable the buttons after clicking
+        self.won_button.disabled = True
+        self.lost_button.disabled = True
+        await self.alert_message.edit(view=self)
+
+        self.lost_button_clicked = True
+        await interaction.response.send_message("L'alerte est marquée comme perdue.", ephemeral=True)
 
 
 class GuildPingView(View):
@@ -130,12 +186,12 @@ class GuildPingView(View):
 
             alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
             if not alert_channel:
-                await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
+                await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
                 return
 
             role = interaction.guild.get_role(role_id)
             if not role:
-                await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
+                await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
             # Send alert to the alert channel
@@ -148,7 +204,7 @@ class GuildPingView(View):
             embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
             embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-            sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
+            sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot, sent_message))
 
             # Acknowledge the interaction
             await interaction.response.send_message(
@@ -174,7 +230,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
             if message.pinned and message.author == self.bot.user:  # Check if the bot is the author of the pinned message
@@ -183,25 +239,8 @@ class StartGuildCog(commands.Cog):
                 return
 
         new_message = await channel.send(content=message_content, view=view)
-        await new_message.pin()
-        print("Panel created and pinned successfully.")
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        await self.ensure_panel()
-
-        guild = self.bot.get_guild(GUILD_ID)
-        alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
-        if alert_channel:
-            await alert_channel.set_permissions(
-                guild.default_role,
-                send_messages=False,
-                add_reactions=False
-            )
-            print("Alert channel locked successfully.")
-
-        print("Bot is ready, and the panel is ensured.")
+        print("Panel created.")
 
 
-async def setup(bot: commands.Bot):
-    await bot.add_cog(StartGuildCog(bot))
+def setup(bot: commands.Bot):
+    bot.add_cog(StartGuildCog(bot))
