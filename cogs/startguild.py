@@ -11,35 +11,35 @@ ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel I
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
     "Darkness": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "🌑",  # Standard moon emoji
         "role_id": 1244077334668116050,
     },
     "GTO": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "🔥",  # Standard fire emoji
         "role_id": 1244077334668116050,
     },
     "Aversion": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "💀",  # Standard skull emoji
         "role_id": 1244077334668116050,
     },
     "Bonnebuche": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "🍞",  # Standard bread emoji
         "role_id": 1244077334668116050,
     },
     "LMDF": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "💪",  # Standard muscle emoji
         "role_id": 1244077334668116050,
     },
     "Notorious": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "⚡",  # Standard lightning bolt emoji
         "role_id": 1244077334668116050,
     },
     "Percophile": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "🎶",  # Standard musical notes emoji
         "role_id": 1244077334668116050,
     },
     "Tilisquad": {
-        "emoji": "<:joy:1309553141003325481>",  # Correct custom emoji format
+        "emoji": "👑",  # Standard crown emoji
         "role_id": 1244077334668116050,
     },
 }
