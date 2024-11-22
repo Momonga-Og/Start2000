@@ -176,7 +176,7 @@ class StartGuildCog(commands.Cog):
         message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
-            if message.pinned:
+            if message.pinned and message.author == self.bot.user:  # Check if the bot is the author of the pinned message
                 await message.edit(content=message_content, view=view)
                 print("Panel updated.")
                 return
