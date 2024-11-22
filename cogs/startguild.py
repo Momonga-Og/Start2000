@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import View, Button, Modal, TextInput
 import random
 
 # Configuration
@@ -8,7 +8,6 @@ GUILD_ID = 1217700740949348443  # Replace with your guild ID
 PING_DEF_CHANNEL_ID = 1247706162317758597  # Replace with your ping channel ID
 ALERTE_DEF_CHANNEL_ID = 1247728738326679583  # Replace with your alert channel ID
 
-# Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
     "Darkness": {"emoji": "🌑", "role_id": 1244077334668116050},
     "GTO": {"emoji": "🔥", "role_id": 1244077334668116050},
@@ -20,7 +19,6 @@ GUILD_EMOJIS_ROLES = {
     "Tilisquad": {"emoji": "👑", "role_id": 1244077334668116050},
 }
 
-# French alert messages
 ALERT_MESSAGES = [
     "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
     "⚔️ {role}, il est temps de défendre !",
@@ -30,12 +28,69 @@ ALERT_MESSAGES = [
 ]
 
 
+class AlertResponseView(View):
+    def __init__(self, alert_message: discord.Message):
+        super().__init__(timeout=None)
+        self.alert_message = alert_message
+
+        # Add buttons
+        self.add_item(
+            Button(label="Ajouter une Note", style=discord.ButtonStyle.primary, custom_id="add_note")
+        )
+        self.add_item(
+            Button(label="Win", style=discord.ButtonStyle.success, custom_id="win")
+        )
+        self.add_item(
+            Button(label="Lost", style=discord.ButtonStyle.danger, custom_id="lost")
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return interaction.channel.id == ALERTE_DEF_CHANNEL_ID
+
+    @discord.ui.button(label="Ajouter une Note", style=discord.ButtonStyle.primary)
+    async def add_note(self, button: Button, interaction: discord.Interaction):
+        class NoteModal(Modal):
+            def __init__(self):
+                super().__init__(title="Ajouter une Note")
+
+                self.note = TextInput(
+                    label="Note",
+                    placeholder="Ajoutez une note ici...",
+                    style=discord.TextStyle.paragraph,
+                )
+                self.add_item(self.note)
+
+            async def on_submit(self, modal_interaction: discord.Interaction):
+                await self.alert_message.reply(
+                    f"📘 **Note ajoutée par {modal_interaction.user.mention}**:\n{self.note.value}",
+                    mention_author=False,
+                )
+                await modal_interaction.response.send_message("Note ajoutée avec succès!", ephemeral=True)
+
+        await interaction.response.send_modal(NoteModal())
+
+    @discord.ui.button(label="Win", style=discord.ButtonStyle.success)
+    async def mark_win(self, button: Button, interaction: discord.Interaction):
+        await self.alert_message.reply(
+            f"✅ **Alerte marquée comme GAGNÉE par {interaction.user.mention}**.",
+            mention_author=False,
+        )
+        await interaction.response.send_message("Alerte marquée comme gagnée!", ephemeral=True)
+
+    @discord.ui.button(label="Lost", style=discord.ButtonStyle.danger)
+    async def mark_lost(self, button: Button, interaction: discord.Interaction):
+        await self.alert_message.reply(
+            f"❌ **Alerte marquée comme PERDUE par {interaction.user.mention}**.",
+            mention_author=False,
+        )
+        await interaction.response.send_message("Alerte marquée comme perdue!", ephemeral=True)
+
+
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
 
-        # Add alert buttons for guilds
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
             button = Button(
                 label=f"  {guild_name.upper()}  ",
@@ -44,29 +99,6 @@ class GuildPingView(View):
             )
             button.callback = self.create_ping_callback(guild_name, data["role_id"])
             self.add_item(button)
-
-        # Add additional buttons
-        self.add_item(
-            Button(
-                label="Ajouter une Note",
-                style=discord.ButtonStyle.success,
-                custom_id="add_note",
-            )
-        )
-        self.add_item(
-            Button(
-                label="Win",
-                style=discord.ButtonStyle.green,
-                custom_id="win",
-            )
-        )
-        self.add_item(
-            Button(
-                label="Lost",
-                style=discord.ButtonStyle.red,
-                custom_id="lost",
-            )
-        )
 
     def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
@@ -87,14 +119,11 @@ class GuildPingView(View):
                 return
 
             alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
-            embed = discord.Embed(
-                title="🔔 Alerte envoyée !",
-                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
-                color=discord.Color.red(),
-            )
-            embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+            sent_message = await alert_channel.send(alert_message)
 
-            await alert_channel.send(f"{alert_message}", embed=embed)
+            # Add responsive buttons under the alert
+            view = AlertResponseView(sent_message)
+            await sent_message.edit(view=view)
 
             await interaction.response.send_message(
                 f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
@@ -119,10 +148,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = (
-            "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !\n"
-            "Utilisez les boutons ci-dessous pour des actions supplémentaires."
-        )
+        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
             if message.pinned and message.author == self.bot.user:
