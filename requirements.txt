@@ -1,2 +1,6 @@
 discord.py
 python-dotenv
+Pillow
+gTTS
+pandas
+googletrans==4.0.0-rc1
