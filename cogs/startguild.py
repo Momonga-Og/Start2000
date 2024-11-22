@@ -53,59 +53,6 @@ ALERT_MESSAGES = [
     "⚠️ {role}, mobilisez votre équipe pour défendre !",
 ]
 
-
-class NoteModal(Modal):
-    def __init__(self, message: discord.Message):
-        super().__init__(title="Ajouter une note")
-        self.message = message
-
-        self.note_input = TextInput(
-            label="Votre note",
-            placeholder="Ajoutez des détails sur l'alerte (nom de la guilde attaquante, heure, etc.)",
-            max_length=100,
-            style=discord.TextStyle.paragraph,
-        )
-        self.add_item(self.note_input)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        # Retrieve the original embed and append the note
-        embed = self.message.embeds[0]
-        existing_notes = embed.fields[0].value if embed.fields else "Aucune note."
-        updated_notes = (
-            f"{existing_notes}\n- **{interaction.user.display_name}**: {self.note_input.value.strip()}"
-        )
-
-        # Update the embed with the new note
-        embed.clear_fields()
-        embed.add_field(name="📝 Notes", value=updated_notes, inline=False)
-
-        await self.message.edit(embed=embed)
-        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
-
-
-class AddNoteView(View):
-    def __init__(self, bot: commands.Bot, alert_message: discord.Message):
-        super().__init__()
-        self.bot = bot
-        self.alert_message = alert_message
-
-        self.add_note_button = Button(
-            label="Ajouter une note",
-            style=discord.ButtonStyle.secondary,
-            emoji="📝"
-        )
-        self.add_note_button.callback = self.add_note_callback
-        self.add_item(self.add_note_button)
-
-    async def add_note_callback(self, interaction: discord.Interaction):
-        if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
-            await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
-            return
-
-        modal = NoteModal(self.alert_message)
-        await interaction.response.send_modal(modal)
-
-
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
@@ -145,16 +92,15 @@ class GuildPingView(View):
                 color=discord.Color.red()
             )
             embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
-            embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-            sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot, sent_message))
+            await alert_channel.send(f"{alert_message}", embed=embed)
 
+            # Acknowledge the interaction
             await interaction.response.send_message(
                 f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
             )
 
         return callback
-
 
 class StartGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -171,19 +117,27 @@ class StartGuildCog(commands.Cog):
             print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
             return
 
+        print(f"Found guild: {guild.name}, channel: {channel.name}")
         view = GuildPingView(self.bot)
         message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
+        # Check for existing pinned messages
         async for message in channel.history(limit=50):
             if message.pinned and message.author == self.bot.user:
                 await message.edit(content=message_content, view=view)
+                print("Panel updated.")
                 return
 
+        # Create a new message if no existing one is found
         new_message = await channel.send(content=message_content, view=view)
         await new_message.pin()
+        print("Panel created and pinned.")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f"{self.bot.user} is ready!")
+        await self.ensure_panel()
 
 
 async def setup(bot: commands.Bot):
-    cog = StartGuildCog(bot)
-    await bot.add_cog(cog)
-    await cog.ensure_panel()
+    await bot.add_cog(StartGuildCog(bot))
