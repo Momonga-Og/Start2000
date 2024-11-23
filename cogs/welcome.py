@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.guild_id = 123456789012345678  # Your guild ID here
+        self.guild_id = 1217700740949348443  # Your guild ID here
         self.welcome_channel_id = 1247728759780413480  # Default channel for welcome messages
         self.leave_channel_id = 1247728782559809558  # Default channel for leaving messages
         self.welcome_message = "Welcome, {user.name}! We're glad to have you here!"  # Default welcome message
