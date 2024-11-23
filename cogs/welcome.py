@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import random
+import logging
 
 class Welcome(commands.Cog):
     def __init__(self, bot):
@@ -43,6 +44,8 @@ class Welcome(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         """When a member joins the server."""
+        # Log to check if the event triggers
+        logging.info(f"{member.name} has joined the server.")
         channel = self.bot.get_channel(self.welcome_channel_id)
         if channel:
             embed = await self.create_welcome_embed(member)
@@ -51,6 +54,8 @@ class Welcome(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         """When a member leaves the server."""
+        # Log to check if the event triggers
+        logging.info(f"{member.name} has left the server.")
         channel = self.bot.get_channel(self.leave_channel_id)
         if channel:
             embed = await self.create_leave_embed(member)
