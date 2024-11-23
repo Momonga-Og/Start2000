@@ -189,7 +189,17 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = (
+            "**🎯 DEF Alert Panel**\n\n"
+            "Welcome to the Defense Alert Panel! Click on your guild's button below to send an alert to your team. "
+            "Each button corresponds to a guild, and pressing it will notify all members associated with that guild.\n\n"
+            "💡 **How to Use:**\n"
+            "1️⃣ Click the button for your guild.\n"
+            "2️⃣ Check the alert channel for updates.\n"
+            "3️⃣ Add notes to alerts if necessary.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "⬇️ **Available Guilds** ⬇️\n"
+        )
 
         async for message in channel.history(limit=50):
             if message.pinned:
@@ -209,13 +219,11 @@ class StartGuildCog(commands.Cog):
         alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
         if alert_channel:
             await alert_channel.set_permissions(
-                guild.default_role,
-                send_messages=False,
-                add_reactions=False
+                guild.default_role, send_messages=False, add_reactions=False
             )
-            print("Alert channel locked successfully.")
+            print("Alert channel permissions updated.")
 
-        print("Bot is ready, and the panel is ensured.")
+        print("Bot is ready.")
 
 
 async def setup(bot: commands.Bot):
