@@ -94,27 +94,45 @@ class AlertActionView(View):
         await interaction.response.send_modal(modal)
 
     async def mark_as_won(self, interaction: discord.Interaction):
-        await self.mark_alert(interaction, "Gagnée", discord.Color.green())
+    await self.mark_alert(interaction, "Gagnée", discord.Color.green())
 
     async def mark_as_lost(self, interaction: discord.Interaction):
-        await self.mark_alert(interaction, "Perdue", discord.Color.red())
+    await self.mark_alert(interaction, "Perdue", discord.Color.red())
 
     async def mark_alert(self, interaction: discord.Interaction, status: str, color: discord.Color):
+    # Acknowledge the interaction immediately
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.errors.NotFound:
+        # If the interaction has expired, log the issue and exit
+        print(f"Interaction expired for marking alert as {status}.")
+        return
+        
+
         if self.is_locked:
-            await interaction.response.send_message("Cette alerte a déjà été marquée.", ephemeral=True)
-            return
+        try:
+            await interaction.followup.send("Cette alerte a déjà été marquée.", ephemeral=True)
+        except discord.errors.NotFound:
+            print("Failed to send followup. Interaction may have expired.")
+        return
 
-        self.is_locked = True
-        for item in self.children:
-            item.disabled = True
-        await self.message.edit(view=self)
+    self.is_locked = True  # Lock the buttons
+    for item in self.children:
+        item.disabled = True  # Disable all buttons
+    await self.message.edit(view=self)
 
-        embed = self.message.embeds[0]
-        embed.color = color
-        embed.add_field(name="Statut", value=f"L'alerte a été marquée comme **{status}** par {interaction.user.mention}.", inline=False)
+    # Update the embed to reflect the status
+    embed = self.message.embeds[0]
+    embed.color = color
+    embed.add_field(name="Statut", value=f"L'alerte a été marquée comme **{status}** par {interaction.user.mention}.", inline=False)
 
-        await self.message.edit(embed=embed)
-        await interaction.response.send_message(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
+    await self.message.edit(embed=embed)
+
+    # Follow-up to notify the user of the success
+    try:
+        await interaction.followup.send(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
+    except discord.errors.NotFound:
+        print("Failed to send followup. Interaction may have expired.")
 
 
 class GuildPingView(View):
