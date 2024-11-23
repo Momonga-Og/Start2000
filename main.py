@@ -111,7 +111,7 @@ EXTENSIONS = [
     'cogs.admin',
     'cogs.relocate', 'cogs.watermark','cogs.talk',
     'cogs.watermark_user', 'cogs.metiers',
-    'cogs.image_converter','cogs.startguild',
+    'cogs.image_converter','cogs.startguild1',
     'cogs.welcomesparta',
     'cogs.super','cogs.translator','cogs.voice',
 ]
