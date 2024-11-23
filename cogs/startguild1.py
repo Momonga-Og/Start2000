@@ -1,5 +1,6 @@
 # startguild1.py
 import random
+from discord.ext import commands
 
 # Configuration
 GUILD_ID = 1217700740949348443  # Replace with your guild ID
@@ -24,5 +25,7 @@ ALERT_MESSAGES = [
     "💥 {role} est attaquée ! Rejoignez la défense !",
     "⚠️ {role}, mobilisez votre équipe pour défendre !",
 ]
+await bot.reload_extension("cogs.startguild1")
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(StartGuild1Cog(bot))
