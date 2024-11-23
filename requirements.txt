@@ -6,3 +6,4 @@ pandas
 googletrans==4.0.0-rc1
 pynacl
 openpyxl
+py-cord
