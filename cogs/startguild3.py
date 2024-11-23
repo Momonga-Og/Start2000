@@ -1,11 +1,8 @@
 # startguild3.py
-# This script initializes the bot, sets up the cog, and manages events like on_ready.
-
 import discord
 from discord.ext import commands
-from startguild1 import GUILD_ID, PING_DEF_CHANNEL_ID
 from startguild2 import GuildPingView
-
+from startguild1 import GUILD_ID, PING_DEF_CHANNEL_ID
 
 class StartGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -39,7 +36,6 @@ class StartGuildCog(commands.Cog):
     async def on_ready(self):
         print(f"{self.bot.user} is ready!")
         await self.ensure_panel()
-
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(StartGuildCog(bot))
