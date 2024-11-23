@@ -1,13 +1,10 @@
 # startguild2.py
-# This script handles the panel configuration and button actions for sending alerts.
-
 import discord
-from discord.ui import View, Button, Modal, TextInput
-import random
+from discord.ext import commands
+from discord.ui import View, Button
 from startguild1 import GUILD_ID, GUILD_EMOJIS_ROLES, ALERTE_DEF_CHANNEL_ID, ALERT_MESSAGES
+import random
 
-
-# View for handling alert response actions
 class AlertResponseView(View):
     def __init__(self, alert_message: discord.Message):
         super().__init__(timeout=None)
@@ -15,10 +12,10 @@ class AlertResponseView(View):
 
     @discord.ui.button(label="Ajouter une Note", style=discord.ButtonStyle.primary)
     async def add_note(self, button: Button, interaction: discord.Interaction):
-        class NoteModal(Modal):
+        class NoteModal(discord.ui.Modal):
             def __init__(self):
                 super().__init__(title="Ajouter une Note")
-                self.note = TextInput(
+                self.note = discord.ui.TextInput(
                     label="Note",
                     placeholder="Ajoutez une note ici...",
                     style=discord.TextStyle.paragraph,
@@ -51,9 +48,8 @@ class AlertResponseView(View):
         await interaction.response.send_message("Alerte marquée comme perdue!", ephemeral=True)
 
 
-# View for the guild selection panel
 class GuildPingView(View):
-    def __init__(self, bot: discord.ext.commands.Bot):
+    def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
 
