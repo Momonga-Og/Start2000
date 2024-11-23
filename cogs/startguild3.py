@@ -38,4 +38,4 @@ class StartGuildCog(commands.Cog):
         await self.ensure_panel()
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(StartGuildCog(bot))
+    await bot.add_cog(StartGuild3Cog(bot))
