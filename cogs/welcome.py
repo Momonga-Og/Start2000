@@ -1,69 +1,68 @@
 import discord
 from discord.ext import commands
-import random
 import logging
+
+# Enable logging to help with debugging
+logging.basicConfig(level=logging.INFO)
 
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.welcome_channel_id = 1247728759780413480  # Welcome channel ID
-        self.leave_channel_id = 1247728782559809558   # Leaving channel ID
-        self.welcome_messages = [
-            "Bienvenue sur le serveur, {name} ! Nous sommes ravis de t'accueillir parmi nous.",
-            "Salut {name}, bienvenue ! Amuse-toi bien ici !",
-            "Bienvenue dans notre belle communauté, {name} !",
-        ]
-        self.leave_messages = [
-            "Au revoir, {name}. Nous espérons te revoir bientôt !",
-            "C'est triste de te voir partir, {name}. À la prochaine !",
-            "Adieu, {name}. Bonne continuation !"
-        ]
+        self.welcome_channel_id = 1247728759780413480  # Channel for welcoming users
+        self.leave_channel_id = 1247728782559809558  # Channel for user departures
 
     async def create_welcome_embed(self, member):
-        """Create the embed for a user joining."""
+        """Create an embed message to welcome a new user."""
         embed = discord.Embed(
-            title="Bienvenue sur le serveur !",
-            description=f"{random.choice(self.welcome_messages).format(name=member.name)}",
+            title="Welcome to the Server!",
+            description=f"Bienvenue {member.mention} dans le serveur!",
             color=discord.Color.green()
         )
         embed.set_thumbnail(url=member.avatar.url)
-        embed.set_footer(text=f"Nous sommes maintenant {len(member.guild.members)} membres !")
+        embed.add_field(name="Username", value=member.name, inline=True)
+        embed.add_field(name="User ID", value=member.id, inline=True)
+        embed.set_footer(text="Nous espérons que vous passerez un bon moment ici !")
         return embed
 
     async def create_leave_embed(self, member):
-        """Create the embed for a user leaving."""
+        """Create an embed message to announce when a user leaves."""
         embed = discord.Embed(
-            title="Un membre nous quitte...",
-            description=f"{random.choice(self.leave_messages).format(name=member.name)}",
+            title="A user has left the server",
+            description=f"Au revoir {member.mention}, tu vas nous manquer !",
             color=discord.Color.red()
         )
         embed.set_thumbnail(url=member.avatar.url)
-        embed.set_footer(text=f"Il nous reste {len(member.guild.members)} membres.")
+        embed.add_field(name="Username", value=member.name, inline=True)
+        embed.add_field(name="User ID", value=member.id, inline=True)
+        embed.set_footer(text="On espère te revoir bientôt !")
         return embed
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        """When a member joins the server."""
-        # Log to check if the event triggers
+        """Handle when a member joins the server."""
         logging.info(f"{member.name} has joined the server.")
+        
+        # Get the welcome channel by ID
         channel = self.bot.get_channel(self.welcome_channel_id)
         if channel:
             embed = await self.create_welcome_embed(member)
             await channel.send(embed=embed)
+        else:
+            logging.error("Welcome channel not found.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        """When a member leaves the server."""
-        # Log to check if the event triggers
+        """Handle when a member leaves the server."""
         logging.info(f"{member.name} has left the server.")
+        
+        # Get the leave channel by ID
         channel = self.bot.get_channel(self.leave_channel_id)
         if channel:
             embed = await self.create_leave_embed(member)
             await channel.send(embed=embed)
-
-    async def cog_unload(self):
-        """Ensure bot disconnects properly."""
-        pass
+        else:
+            logging.error("Leave channel not found.")
 
 async def setup(bot):
+    """Setup the cog."""
     await bot.add_cog(Welcome(bot))
