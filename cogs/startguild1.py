@@ -56,11 +56,14 @@ class NoteModal(Modal):
         await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
 
 
-class AddNoteView(View):
-    def __init__(self, bot: commands.Bot):
-        super().__init__()
+class AlertActionView(View):
+    def __init__(self, bot: commands.Bot, message: discord.Message):
+        super().__init__(timeout=None)
         self.bot = bot
+        self.message = message
+        self.is_locked = False  # To prevent multiple users from clicking the buttons
 
+        # Add the "Ajouter une note" button
         self.add_note_button = Button(
             label="Ajouter une note",
             style=discord.ButtonStyle.secondary,
@@ -69,20 +72,55 @@ class AddNoteView(View):
         self.add_note_button.callback = self.add_note_callback
         self.add_item(self.add_note_button)
 
+        # Add the "Won" button
+        self.won_button = Button(
+            label="Won",
+            style=discord.ButtonStyle.success,  # Green color
+        )
+        self.won_button.callback = self.mark_as_won
+        self.add_item(self.won_button)
+
+        # Add the "Lost" button
+        self.lost_button = Button(
+            label="Lost",
+            style=discord.ButtonStyle.danger,  # Red color
+        )
+        self.lost_button.callback = self.mark_as_lost
+        self.add_item(self.lost_button)
+
     async def add_note_callback(self, interaction: discord.Interaction):
-        try:
-            # Ensure interaction is happening in the correct channel
-            if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
-                await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
-                return
+        if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
+            await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
+            return
 
-            # Show the modal to the user
-            modal = NoteModal(interaction.message)
-            await interaction.response.send_modal(modal)
+        # Show the modal to the user
+        modal = NoteModal(self.message)
+        await interaction.response.send_modal(modal)
 
-        except Exception as e:
-            print(f"Error in add_note_callback: {e}")
-            await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
+    async def mark_as_won(self, interaction: discord.Interaction):
+        await self.mark_alert(interaction, "Gagnée", discord.Color.green())
+
+    async def mark_as_lost(self, interaction: discord.Interaction):
+        await self.mark_alert(interaction, "Perdue", discord.Color.red())
+
+    async def mark_alert(self, interaction: discord.Interaction, status: str, color: discord.Color):
+        if self.is_locked:
+            await interaction.response.send_message("Cette alerte a déjà été marquée.", ephemeral=True)
+            return
+
+        self.is_locked = True  # Lock the buttons
+        for item in self.children:
+            item.disabled = True  # Disable all buttons
+        await self.message.edit(view=self)
+
+        # Update the embed to reflect the status
+        embed = self.message.embeds[0]
+        embed.color = color
+        embed.add_field(name="Statut", value=f"L'alerte a été marquée comme **{status}** par {interaction.user.mention}.", inline=False)
+
+        await self.message.edit(embed=embed)
+        await interaction.response.send_message(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
+
 
 
 class GuildPingView(View):
@@ -130,7 +168,8 @@ class GuildPingView(View):
                 embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
                 embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-                sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
+                sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AlertActionView(self.bot, sent_message))
+
 
                 # Acknowledge the interaction
                 await interaction.response.send_message(
