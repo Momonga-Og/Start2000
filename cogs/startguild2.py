@@ -92,3 +92,5 @@ class GuildPingView(View):
             )
 
         return callback
+async def setup(bot: commands.Bot):
+    await bot.add_cog(StartGuild2Cog(bot))
