@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '0 */5 * * *'  # Runs every 5 hours
 
 jobs:
   deploy:
@@ -35,14 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 5: Set up a cron job to run the bot every 5 hours
-      - name: Set up cron job
-        run: |
-          echo "0 */5 * * * cd /path/to/your/project && python main.py" | crontab -
-          # Make sure cron runs in the background
-          cron
-
-      # Step 6: Run the bot
+      # Step 5: Run the bot
       - name: Run the bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
