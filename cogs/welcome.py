@@ -71,49 +71,49 @@ class Welcome(commands.Cog):
             else:
                 logging.error("Leave channel not found.")
 
-    # Slash command to set the welcome channel
-    @commands.slash_command(name='welcome-channel', description='Sets the welcome channel')
-    async def welcome_channel(self, ctx, channel: discord.TextChannel):
-        if ctx.guild.id != self.guild_id:
-            await ctx.respond(f"This command is only available in the specific server.")
+    # Use app_commands.command instead of slash_command for slash commands
+    @discord.app_commands.command(name='welcome-channel', description='Sets the welcome channel')
+    async def welcome_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        if interaction.guild.id != self.guild_id:
+            await interaction.response.send_message("This command is only available in the specific server.")
             return
         
         if self.welcome_channel_id == channel.id:
-            await ctx.respond(f"This channel is already the welcome channel.")
+            await interaction.response.send_message("This channel is already the welcome channel.")
         else:
             self.set_channel(channel.id)
-            await ctx.respond(f"Welcome channel set to {channel.mention}.")
+            await interaction.response.send_message(f"Welcome channel set to {channel.mention}.")
 
     # Slash command to set the welcome message
-    @commands.slash_command(name='welcome-message', description='Sets the welcome message')
-    async def welcome_message(self, ctx, message: str):
-        if ctx.guild.id != self.guild_id:
-            await ctx.respond(f"This command is only available in the specific server.")
+    @discord.app_commands.command(name='welcome-message', description='Sets the welcome message')
+    async def welcome_message(self, interaction: discord.Interaction, message: str):
+        if interaction.guild.id != self.guild_id:
+            await interaction.response.send_message("This command is only available in the specific server.")
             return
         
         if self.welcome_message == message:
-            await ctx.respond(f"This message is already set as the welcome message.")
+            await interaction.response.send_message("This message is already set as the welcome message.")
         else:
             self.set_message(message)
-            await ctx.respond("Welcome message set successfully.")
+            await interaction.response.send_message("Welcome message set successfully.")
 
     # Slash command to test the welcome message
-    @commands.slash_command(name='welcome-test', description='Sends a test welcome message')
-    async def welcome_test(self, ctx):
-        if ctx.guild.id != self.guild_id:
-            await ctx.respond(f"This command is only available in the specific server.")
+    @discord.app_commands.command(name='welcome-test', description='Sends a test welcome message')
+    async def welcome_test(self, interaction: discord.Interaction):
+        if interaction.guild.id != self.guild_id:
+            await interaction.response.send_message("This command is only available in the specific server.")
             return
         
         channel = self.bot.get_channel(self.welcome_channel_id)
         if channel:
             # Replace placeholders in the welcome message
             message = self.welcome_message
-            message = message.replace("{user.name}", ctx.author.name)
-            message = message.replace("{user.mention}", ctx.author.mention)
+            message = message.replace("{user.name}", interaction.user.name)
+            message = message.replace("{user.mention}", interaction.user.mention)
             await channel.send(message)
-            await ctx.respond("Test welcome message sent.")
+            await interaction.response.send_message("Test welcome message sent.")
         else:
-            await ctx.respond("Welcome channel not found.")
+            await interaction.response.send_message("Welcome channel not found.")
 
 async def setup(bot):
     """Setup the cog."""
