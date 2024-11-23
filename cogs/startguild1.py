@@ -24,3 +24,5 @@ ALERT_MESSAGES = [
     "💥 {role} est attaquée ! Rejoignez la défense !",
     "⚠️ {role}, mobilisez votre équipe pour défendre !",
 ]
+async def setup(bot: commands.Bot):
+    await bot.add_cog(StartGuild1Cog(bot))
