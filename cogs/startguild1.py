@@ -123,7 +123,7 @@ class GuildPingView(View):
         self.bot = bot
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
             button = Button(
-                label=f"  {guild_name.upper()}  ",
+                label=f"{guild_name}",
                 emoji=data["emoji"],
                 style=discord.ButtonStyle.primary
             )
@@ -189,25 +189,28 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = (
-            "**🎯 DEF Alert Panel**\n\n"
-            "Welcome to the Defense Alert Panel! Click on your guild's button below to send an alert to your team. "
-            "Each button corresponds to a guild, and pressing it will notify all members associated with that guild.\n\n"
-            "💡 **How to Use:**\n"
-            "1️⃣ Click the button for your guild.\n"
-            "2️⃣ Check the alert channel for updates.\n"
-            "3️⃣ Add notes to alerts if necessary.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "⬇️ **Available Guilds** ⬇️\n"
+        embed = discord.Embed(
+            title="🎯 DEF Alert Panel",
+            description=(
+                "Welcome to the Defense Alert Panel! Use the buttons below to notify your guild for DEF alerts. "
+                "Each button corresponds to a guild. This feature helps coordinate guild defenses effectively.\n\n"
+                "**💡 Instructions:**\n"
+                "1️⃣ Click your guild's button.\n"
+                "2️⃣ Check the alert channel for updates.\n"
+                "3️⃣ Use the note button to add additional details.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "⬇️ **Available Guilds** ⬇️"
+            ),
+            color=discord.Color.blue()
         )
 
         async for message in channel.history(limit=50):
             if message.pinned:
-                await message.edit(content=message_content, view=view)
+                await message.edit(embed=embed, view=view)
                 print("Panel updated.")
                 return
 
-        new_message = await channel.send(content=message_content, view=view)
+        new_message = await channel.send(embed=embed, view=view)
         await new_message.pin()
         print("Panel created and pinned successfully.")
 
@@ -219,7 +222,9 @@ class StartGuildCog(commands.Cog):
         alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
         if alert_channel:
             await alert_channel.set_permissions(
-                guild.default_role, send_messages=False, add_reactions=False
+                guild.default_role,
+                send_messages=False,
+                add_reactions=False
             )
             print("Alert channel permissions updated.")
 
