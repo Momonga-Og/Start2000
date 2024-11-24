@@ -30,16 +30,11 @@ class RoleButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Assigns the role to the user when they click the button."""
-        guild = interaction.guild
-        if not guild:
-            await interaction.response.send_message(
-                "This action can only be used in a server.",
-                ephemeral=True
-            )
-            return
-
+        guild = interaction.client.guilds[0]  # Since the bot is in one server, fetch the first guild
         member = guild.get_member(interaction.user.id)
+
         if not member:
+            # Fetch the member directly if they aren't cached
             try:
                 member = await guild.fetch_member(interaction.user.id)
             except discord.NotFound:
