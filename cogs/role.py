@@ -17,55 +17,46 @@ GUILD_DATA = {
 }
 
 class RoleSelectionView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot, guild_id):
         super().__init__(timeout=None)  # No timeout for this view
+        self.bot = bot
+        self.guild_id = guild_id
         for guild_name, guild_info in GUILD_DATA.items():
-            self.add_item(RoleButton(guild_name, guild_info["emoji"], guild_info["role_id"]))
+            self.add_item(RoleButton(bot, guild_name, guild_info["emoji"], guild_info["role_id"], guild_id))
 
 class RoleButton(discord.ui.Button):
-    def __init__(self, guild_name, emoji, role_id):
+    def __init__(self, bot, guild_name, emoji, role_id, guild_id):
         super().__init__(label=guild_name, emoji=emoji, style=discord.ButtonStyle.primary)
+        self.bot = bot
         self.guild_name = guild_name
         self.role_id = role_id
+        self.guild_id = guild_id
 
     async def callback(self, interaction: discord.Interaction):
         """Assigns the role to the user when they click the button."""
-        guild = interaction.guild
-        member = interaction.user
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            # Log instead of sending user-facing errors
+            return
 
-        if not guild or not member:
-            await interaction.response.send_message(
-                "This interaction can only be used in a server.",
-                ephemeral=True
-            )
+        member = guild.get_member(interaction.user.id)
+        if not member:
             return
 
         role = guild.get_role(self.role_id)
         additional_role = guild.get_role(ADDITIONAL_ROLE_ID)
 
-        if not role or not additional_role:
-            await interaction.response.send_message(
-                "Roles are not correctly configured. Please contact an admin.",
-                ephemeral=True
-            )
-            return
-
-        try:
-            await member.add_roles(role, additional_role, reason="Role assigned via button interaction.")
-            await interaction.response.send_message(
-                f"You have been assigned to **{self.guild_name}** and the additional role!",
-                ephemeral=True
-            )
-        except discord.Forbidden:
-            await interaction.response.send_message(
-                "I don't have permission to assign roles. Please contact an admin.",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"An error occurred while assigning roles: {e}",
-                ephemeral=True
-            )
+        if role and additional_role:
+            try:
+                await member.add_roles(role, additional_role, reason="Role assigned via button interaction.")
+                await interaction.response.send_message(
+                    f"You have been assigned to **{self.guild_name}** and the additional role!",
+                    ephemeral=True
+                )
+            except discord.Forbidden:
+                pass  # Log permissions issue if necessary
+            except discord.HTTPException as e:
+                pass  # Log API issues if necessary
 
 class RoleCog(commands.Cog):
     def __init__(self, bot):
@@ -76,23 +67,9 @@ class RoleCog(commands.Cog):
         """Triggered when a member joins the server."""
         await self.send_welcome_message(member)
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        """Fallback: Trigger when a new member sends their first message."""
-        if message.author.bot:
-            return  # Ignore bot messages
-
-        member = message.author
-        guild = message.guild
-
-        if guild is None:
-            return  # Ignore DMs
-
-        if len(member.roles) <= 1:  # The default role doesn't count
-            await self.send_welcome_message(member)
-
     async def send_welcome_message(self, member: discord.Member):
         """Send a welcome message to a new member via private message."""
+        guild_id = member.guild.id
         embed = discord.Embed(
             title="Welcome to the Alliance!",
             description=(
@@ -108,10 +85,10 @@ class RoleCog(commands.Cog):
             await member.send(
                 content="Welcome to the server!",
                 embed=embed,
-                view=RoleSelectionView()
+                view=RoleSelectionView(self.bot, guild_id)
             )
         except discord.Forbidden:
-            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
+            pass  # Log if DMs are disabled
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
