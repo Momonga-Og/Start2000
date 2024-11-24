@@ -31,6 +31,16 @@ class RoleButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         guild = interaction.guild
         member = interaction.user
+
+        if guild is None:
+            # Handle case where guild is None (likely in a DM context)
+            await interaction.response.send_message(
+                "This action must be performed within the server. Please use the button in the server.",
+                ephemeral=True
+            )
+            print(f"Role selection attempted in a non-guild context by {member.name}.")
+            return
+
         role = guild.get_role(self.role_id)
         additional_role = guild.get_role(ADDITIONAL_ROLE_ID)
 
@@ -39,6 +49,7 @@ class RoleButton(discord.ui.Button):
                 "There was an error assigning the roles. Please contact an admin.",
                 ephemeral=True
             )
+            print(f"Error: Role {self.role_id} or additional role {ADDITIONAL_ROLE_ID} not found in guild {guild.name}.")
             return
 
         # Assign roles
