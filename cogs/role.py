@@ -1,76 +1,60 @@
 import discord
 from discord.ext import commands
 
-# Replace this ID with the ID of the additional role to assign to all users.
-ADDITIONAL_ROLE_ID = 1258492552605335645
-
 # Role data
 ROLE_DATA = {
-    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
-    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
-    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
-    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
-    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
-    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
-    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
-    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
+    "Darkness": {"emoji": "🖤", "role_id": 1300093554064097407},
+    "GTO": {"emoji": "🔵", "role_id": 1300093554080612363},
+    "Aversion": {"emoji": "🔴", "role_id": 1300093554064097409},
+    "Bonnebuche": {"emoji": "🟢", "role_id": 1300093554080612365},
+    "LMDF": {"emoji": "🟠", "role_id": 1300093554080612364},
+    "Notorious": {"emoji": "💛", "role_id": 1300093554064097406},
+    "Percophile": {"emoji": "💜", "role_id": 1300093554080612362},
+    "Tilisquad": {"emoji": "🤍", "role_id": 1300093554080612367},
 }
 
 class RoleSelectionView(discord.ui.View):
-    def __init__(self, bot, role_id):
-        super().__init__(timeout=None)  # No timeout for this view
+    def __init__(self, bot, member):
+        super().__init__(timeout=None)  # No timeout
         self.bot = bot
-        self.role_id = role_id
+        self.member = member
+
+        # Add a button for each role
         for role_name, role_info in ROLE_DATA.items():
-            self.add_item(RoleButton(bot, role_name, role_info["emoji"], role_info["role_id"], role_id))
+            self.add_item(RoleButton(bot, member, role_name, role_info["emoji"], role_info["role_id"]))
 
 
 class RoleButton(discord.ui.Button):
-    def __init__(self, bot, role_name, emoji, role_id, role_group_id):
+    def __init__(self, bot, member, role_name, emoji, role_id):
         super().__init__(label=role_name, emoji=emoji, style=discord.ButtonStyle.primary)
         self.bot = bot
+        self.member = member
         self.role_name = role_name
         self.role_id = role_id
-        self.role_group_id = role_group_id
 
     async def callback(self, interaction: discord.Interaction):
-        """Assigns the role to the user when they click the button."""
-        server = interaction.guild
-        member = interaction.user
+        """Assigns the selected role to the user in the server."""
+        server = interaction.guild or self.member.guild
+        user = self.member
 
-        if not server or not member:
-            await interaction.response.send_message(
-                "This interaction can only be used in a server.",
-                ephemeral=True
-            )
+        if not server:
+            await interaction.response.send_message("Une erreur s'est produite. Veuillez réessayer.", ephemeral=True)
             return
 
         role = server.get_role(self.role_id)
-        additional_role = server.get_role(ADDITIONAL_ROLE_ID)
-
-        if not role or not additional_role:
-            await interaction.response.send_message(
-                "Roles are not correctly configured. Please contact an admin.",
-                ephemeral=True
-            )
+        if not role:
+            await interaction.response.send_message("Le rôle est introuvable. Veuillez contacter un administrateur.", ephemeral=True)
             return
 
         try:
-            await member.add_roles(role, additional_role, reason="Role assigned via button interaction.")
+            await user.add_roles(role, reason="Rôle assigné via le panel de sélection.")
             await interaction.response.send_message(
-                f"You have been assigned to **{self.role_name}** and the additional role!",
-                ephemeral=True
+                f"Vous avez reçu le rôle **{self.role_name}** avec succès !", ephemeral=True
             )
         except discord.Forbidden:
-            await interaction.response.send_message(
-                "I don't have permission to assign roles. Please contact an admin.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("Je n'ai pas la permission d'assigner ce rôle.", ephemeral=True)
         except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"An error occurred while assigning roles: {e}",
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"Erreur lors de l'attribution du rôle : {e}", ephemeral=True)
 
 
 class RoleCog(commands.Cog):
@@ -78,46 +62,42 @@ class RoleCog(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):
-        """Triggered when a member joins the server."""
-        await self.send_welcome_message(member)
-
-    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        """Fallback: Trigger when a new member sends their first message."""
+        """Detects a new user when they send their first message."""
         if message.author.bot:
-            return  # Ignore bot messages
+            return  # Ignore bots
 
-        member = message.author
+        user = message.author
         server = message.guild
 
         if server is None:
             return  # Ignore DMs
 
-        if len(member.roles) <= 1:  # The default role doesn't count
-            await self.send_welcome_message(member)
+        # Check if the user has only the default role
+        if len(user.roles) <= 1:
+            await self.send_welcome_message(user)
 
     async def send_welcome_message(self, member: discord.Member):
-        """Send a welcome message to a new member via private message."""
+        """Sends a welcome DM to the new user with role selection buttons."""
         embed = discord.Embed(
-            title="Welcome to the Alliance!",
+            title="Bienvenue dans l'Alliance !",
             description=(
-                "Welcome to the server! Please select your role from the buttons below "
-                "to get the appropriate role. You'll also receive an additional role for being part of the alliance."
+                "Bienvenue sur le serveur ! Veuillez choisir votre rôle parmi les options ci-dessous en cliquant sur un bouton. "
+                "Votre rôle déterminera votre place dans l'alliance. Faites le bon choix !"
             ),
             color=discord.Color.blue()
         )
-        embed.set_footer(text="Choose wisely!")
+        embed.set_footer(text="Panel de sélection des rôles")
         embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
 
         try:
             await member.send(
-                content="Welcome to the server!",
+                content="Bienvenue sur le serveur !",
                 embed=embed,
-                view=RoleSelectionView(self.bot, member.guild.id)
+                view=RoleSelectionView(self.bot, member)
             )
         except discord.Forbidden:
-            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
+            print(f"Impossible d'envoyer un DM à {member.name}. Les DM sont peut-être désactivés.")
 
 
 async def setup(bot):
