@@ -6,14 +6,14 @@ ADDITIONAL_ROLE_ID = 1300093554080612361
 
 # Guild data
 GUILD_DATA = {
-    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
-    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
-    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
-    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
-    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
-    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
-    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
-    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
+    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1246615518279106601},
+    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1246615520007028769},
+    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1246615521181306932},
+    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1258495515985707158},
+    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1244077334668116050},
+    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1246615518279106601},
+    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1246615520007028769},
+    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1246615521181306932},
 }
 
 class RoleSelectionView(discord.ui.View):
@@ -75,7 +75,7 @@ class RoleCog(commands.Cog):
             await self.send_welcome_message(member)
 
     async def send_welcome_message(self, member: discord.Member):
-        """Send a welcome message to a new member."""
+        """Send a welcome message to a new member via private message."""
         embed = discord.Embed(
             title="Welcome to the Alliance!",
             description=(
@@ -87,16 +87,16 @@ class RoleCog(commands.Cog):
         embed.set_footer(text="Choose wisely!")
         embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
 
-        # Send the embed with the buttons
-        channel = member.guild.system_channel or discord.utils.get(member.guild.text_channels, name="welcome")
-        if channel:
-            await channel.send(
-                content=f"Welcome {member.mention}!",
+        try:
+            # Send DM to the new member
+            await member.send(
+                content="Welcome to the server!",
                 embed=embed,
                 view=RoleSelectionView()
             )
-        else:
-            print(f"No suitable channel found to welcome {member.name}.")
+            print(f"Sent welcome message to {member.name} in DM.")
+        except discord.Forbidden:
+            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
