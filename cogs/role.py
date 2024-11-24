@@ -30,13 +30,6 @@ class RoleButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         guild = interaction.guild
-        if guild is None:
-            await interaction.response.send_message(
-                "This interaction can only be used in a server.",
-                ephemeral=True
-            )
-            return
-
         member = interaction.user
         role = guild.get_role(self.role_id)
         additional_role = guild.get_role(ADDITIONAL_ROLE_ID)
@@ -49,22 +42,11 @@ class RoleButton(discord.ui.Button):
             return
 
         # Assign roles
-        try:
-            await member.add_roles(role, additional_role)
-            await interaction.response.send_message(
-                f"You have been assigned to **{self.guild_name}** and an additional role!",
-                ephemeral=True
-            )
-        except discord.Forbidden:
-            await interaction.response.send_message(
-                "I do not have permission to assign roles. Please contact an admin.",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"An error occurred: {str(e)}",
-                ephemeral=True
-            )
+        await member.add_roles(role, additional_role)
+        await interaction.response.send_message(
+            f"You have been assigned to **{self.guild_name}** and an additional role!",
+            ephemeral=True
+        )
 
 class RoleCog(commands.Cog):
     def __init__(self, bot):
@@ -74,6 +56,23 @@ class RoleCog(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         """Triggered when a member joins the server."""
         await self.send_welcome_message(member)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        """Fallback: Trigger when a new member sends their first message."""
+        if message.author.bot:
+            return  # Ignore bot messages
+
+        member = message.author
+        guild = message.guild
+
+        if guild is None:
+            return  # Ignore DMs
+
+        # Check if the member has no roles (likely new member)
+        if len(member.roles) <= 1:  # The default role doesn't count
+            print(f"Detected new member via message: {member.name}")
+            await self.send_welcome_message(member)
 
     async def send_welcome_message(self, member: discord.Member):
         """Send a welcome message to a new member via private message."""
