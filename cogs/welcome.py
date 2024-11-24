@@ -71,7 +71,16 @@ class Welcome(commands.Cog):
             else:
                 logging.error("Leave channel not found.")
 
-    # Use app_commands.command instead of slash_command for slash commands
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Respond to messages in a specific channel."""
+        if message.author.bot:
+            return  # Ignore messages from bots
+
+        # Example response logic: Reply if a user says "hello"
+        if "hello" in message.content.lower():
+            await message.channel.send(f"Hello, {message.author.mention}! Welcome to the server!")
+
     @discord.app_commands.command(name='welcome-channel', description='Sets the welcome channel')
     async def welcome_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
         if interaction.guild.id != self.guild_id:
@@ -84,7 +93,6 @@ class Welcome(commands.Cog):
             self.set_channel(channel.id)
             await interaction.response.send_message(f"Welcome channel set to {channel.mention}.")
 
-    # Slash command to set the welcome message
     @discord.app_commands.command(name='welcome-message', description='Sets the welcome message')
     async def welcome_message(self, interaction: discord.Interaction, message: str):
         if interaction.guild.id != self.guild_id:
@@ -97,7 +105,6 @@ class Welcome(commands.Cog):
             self.set_message(message)
             await interaction.response.send_message("Welcome message set successfully.")
 
-    # Slash command to test the welcome message
     @discord.app_commands.command(name='welcome-test', description='Sends a test welcome message')
     async def welcome_test(self, interaction: discord.Interaction):
         if interaction.guild.id != self.guild_id:
@@ -106,7 +113,6 @@ class Welcome(commands.Cog):
         
         channel = self.bot.get_channel(self.welcome_channel_id)
         if channel:
-            # Replace placeholders in the welcome message
             message = self.welcome_message
             message = message.replace("{user.name}", interaction.user.name)
             message = message.replace("{user.mention}", interaction.user.mention)
