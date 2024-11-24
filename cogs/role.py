@@ -29,18 +29,33 @@ class RoleButton(discord.ui.Button):
         self.role_id = role_id
 
     async def callback(self, interaction: discord.Interaction):
-        guild = interaction.guild
         member = interaction.user
 
-        if guild is None:
-            # Handle case where guild is None (likely in a DM context)
+        # Fetch the guild from the bot's cache or API
+        guild_id = interaction.client.guilds[0].id  # Adjust if multiple guilds are involved
+        guild = interaction.client.get_guild(guild_id)
+        
+        if not guild:
+            # Fallback to fetching the guild if not in cache
+            try:
+                guild = await interaction.client.fetch_guild(guild_id)
+            except discord.HTTPException:
+                await interaction.response.send_message(
+                    "Unable to fetch the server. Please contact an admin.",
+                    ephemeral=True
+                )
+                return
+
+        # Ensure the member is in the guild
+        member_in_guild = guild.get_member(member.id)
+        if not member_in_guild:
             await interaction.response.send_message(
-                "This action must be performed within the server. Please use the button in the server.",
+                "You must be a member of the server to use this action.",
                 ephemeral=True
             )
-            print(f"Role selection attempted in a non-guild context by {member.name}.")
             return
 
+        # Fetch the roles
         role = guild.get_role(self.role_id)
         additional_role = guild.get_role(ADDITIONAL_ROLE_ID)
 
@@ -49,11 +64,10 @@ class RoleButton(discord.ui.Button):
                 "There was an error assigning the roles. Please contact an admin.",
                 ephemeral=True
             )
-            print(f"Error: Role {self.role_id} or additional role {ADDITIONAL_ROLE_ID} not found in guild {guild.name}.")
             return
 
         # Assign roles
-        await member.add_roles(role, additional_role)
+        await member_in_guild.add_roles(role, additional_role)
         await interaction.response.send_message(
             f"You have been assigned to **{self.guild_name}** and an additional role!",
             ephemeral=True
