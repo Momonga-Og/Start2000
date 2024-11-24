@@ -54,7 +54,28 @@ class RoleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        # Create the embed
+        """Triggered when a member joins the server."""
+        await self.send_welcome_message(member)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        """Fallback: Trigger when a new member sends their first message."""
+        if message.author.bot:
+            return  # Ignore bot messages
+
+        member = message.author
+        guild = message.guild
+
+        if guild is None:
+            return  # Ignore DMs
+
+        # Check if the member has no roles (likely new member)
+        if len(member.roles) <= 1:  # The default role doesn't count
+            print(f"Detected new member via message: {member.name}")
+            await self.send_welcome_message(member)
+
+    async def send_welcome_message(self, member: discord.Member):
+        """Send a welcome message to a new member."""
         embed = discord.Embed(
             title="Welcome to the Alliance!",
             description=(
