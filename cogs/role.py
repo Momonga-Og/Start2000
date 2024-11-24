@@ -67,13 +67,15 @@ class RoleCog(commands.Cog):
         embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
 
         # Send the embed with the buttons
-        channel = member.guild.system_channel
+        channel = member.guild.system_channel or discord.utils.get(member.guild.text_channels, name="welcome")
         if channel:
             await channel.send(
                 content=f"Welcome {member.mention}!",
                 embed=embed,
                 view=RoleSelectionView()
             )
+        else:
+            print(f"No suitable channel found to welcome {member.name}.")
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
