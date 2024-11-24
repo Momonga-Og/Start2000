@@ -3,14 +3,14 @@ from discord.ext import commands
 
 # Role data
 ROLE_DATA = {
-    "Darkness": {"emoji": "🖤", "role_id": 1300093554064097407},
-    "GTO": {"emoji": "🔵", "role_id": 1300093554080612363},
-    "Aversion": {"emoji": "🔴", "role_id": 1300093554064097409},
-    "Bonnebuche": {"emoji": "🟢", "role_id": 1300093554080612365},
-    "LMDF": {"emoji": "🟠", "role_id": 1300093554080612364},
-    "Notorious": {"emoji": "💛", "role_id": 1300093554064097406},
-    "Percophile": {"emoji": "💜", "role_id": 1300093554080612362},
-    "Tilisquad": {"emoji": "🤍", "role_id": 1300093554080612367},
+    "Darkness": {"emoji": "🖤", "role_name": "Darkness", "role_id": 1300093554064097407},
+    "GTO": {"emoji": "🔵", "role_name": "GTO", "role_id": 1300093554080612363},
+    "Aversion": {"emoji": "🔴", "role_name": "Aversion", "role_id": 1300093554064097409},
+    "Bonnebuche": {"emoji": "🟢", "role_name": "Bonnebuche", "role_id": 1300093554080612365},
+    "LMDF": {"emoji": "🟠", "role_name": "LMDF", "role_id": 1300093554080612364},
+    "Notorious": {"emoji": "💛", "role_name": "Notorious", "role_id": 1300093554064097406},
+    "Percophile": {"emoji": "💜", "role_name": "Percophile", "role_id": 1300093554080612362},
+    "Tilisquad": {"emoji": "🤍", "role_name": "Tilisquad", "role_id": 1300093554080612367},
 }
 
 class RoleSelectionView(discord.ui.View):
@@ -21,19 +21,19 @@ class RoleSelectionView(discord.ui.View):
 
         # Add a button for each role
         for role_name, role_info in ROLE_DATA.items():
-            self.add_item(RoleButton(bot, member, role_name, role_info["emoji"], role_info["role_id"]))
+            self.add_item(RoleButton(bot, member, role_name, role_info["emoji"], role_info["role_name"], role_info["role_id"]))
 
 
 class RoleButton(discord.ui.Button):
-    def __init__(self, bot, member, role_name, emoji, role_id):
+    def __init__(self, bot, member, role_name, emoji, role_display_name, role_id):
         super().__init__(label=role_name, emoji=emoji, style=discord.ButtonStyle.primary)
         self.bot = bot
         self.member = member
-        self.role_name = role_name
+        self.role_display_name = role_display_name
         self.role_id = role_id
 
     async def callback(self, interaction: discord.Interaction):
-        """Assigns the selected role to the user in the server."""
+        """Assigns or creates the selected role and prompts for in-game name."""
         server = interaction.guild or self.member.guild
         user = self.member
 
@@ -41,20 +41,46 @@ class RoleButton(discord.ui.Button):
             await interaction.response.send_message("Une erreur s'est produite. Veuillez réessayer.", ephemeral=True)
             return
 
+        # Get or create the role
         role = server.get_role(self.role_id)
         if not role:
-            await interaction.response.send_message("Le rôle est introuvable. Veuillez contacter un administrateur.", ephemeral=True)
-            return
+            try:
+                role = await server.create_role(
+                    name=self.role_display_name,
+                    reason="Création automatique de rôle via panel de sélection."
+                )
+            except discord.Forbidden:
+                await interaction.response.send_message("Je n'ai pas la permission de créer un rôle.", ephemeral=True)
+                return
 
         try:
             await user.add_roles(role, reason="Rôle assigné via le panel de sélection.")
             await interaction.response.send_message(
-                f"Vous avez reçu le rôle **{self.role_name}** avec succès !", ephemeral=True
+                f"Vous avez reçu le rôle **{self.role_display_name}** avec succès !", ephemeral=True
             )
+            # Prompt for in-game name
+            await self.ask_for_ign(user)
         except discord.Forbidden:
             await interaction.response.send_message("Je n'ai pas la permission d'assigner ce rôle.", ephemeral=True)
         except discord.HTTPException as e:
             await interaction.response.send_message(f"Erreur lors de l'attribution du rôle : {e}", ephemeral=True)
+
+    async def ask_for_ign(self, user: discord.Member):
+        """Sends a message asking for the in-game name."""
+        try:
+            await user.send(
+                "Pour compléter votre inscription, veuillez entrer votre nom en jeu :"
+            )
+
+            def check(message: discord.Message):
+                return message.author == user and isinstance(message.channel, discord.DMChannel)
+
+            response = await self.bot.wait_for("message", check=check, timeout=300)  # Wait for 5 minutes
+            await user.send(f"Merci ! Votre nom en jeu **{response.content}** a été enregistré.")
+        except discord.Forbidden:
+            print(f"Impossible d'envoyer un DM à {user.name}. Les DM sont peut-être désactivés.")
+        except TimeoutError:
+            await user.send("Temps écoulé ! Veuillez réessayer de fournir votre nom en jeu plus tard.")
 
 
 class RoleCog(commands.Cog):
