@@ -33,16 +33,9 @@ class RoleButton(discord.ui.Button):
         role = guild.get_role(self.role_id)
         member = guild.get_member(interaction.user.id)
 
-        # Ensure the role and member are valid
-        if not role:
+        if not role or not member:
             await interaction.response.send_message(
-                "The role for this button was not found. Please contact an admin.",
-                ephemeral=True
-            )
-            return
-        if not member:
-            await interaction.response.send_message(
-                "Unable to find your membership in the server. Please contact an admin.",
+                "There was an error assigning the role. Please contact an admin.",
                 ephemeral=True
             )
             return
@@ -70,30 +63,45 @@ class RoleCog(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):
-        """Triggered when a member joins the server."""
-        await self.send_welcome_message(member)
+    async def on_message(self, message: discord.Message):
+        """Detect a new member sending their first message."""
+        if message.author.bot:
+            return  # Ignore bot messages
 
-    async def send_welcome_message(self, member: discord.Member):
-        """Sends a welcome message with the role selection buttons."""
+        guild = message.guild
+        if guild is None:
+            return  # Ignore DMs
+
+        member = message.author
+
+        # Check if the user has no roles (default role excluded)
+        if len(member.roles) <= 1:
+            # Send the welcome panel in the server's general channel
+            await self.send_welcome_message(member, guild)
+
+    async def send_welcome_message(self, member: discord.Member, guild: discord.Guild):
+        """Send the welcome panel to the server's general channel."""
         embed = discord.Embed(
             title="Welcome to the Server!",
             description=(
-                "Please select your guild by clicking one of the buttons below to be assigned a role."
+                f"Welcome, {member.mention}! Please select your guild by clicking one of the buttons below."
             ),
             color=discord.Color.blue()
         )
         embed.set_footer(text="Welcome to our community!")
-        embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
+        embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
 
-        try:
-            await member.send(
-                content="Welcome to the server!",
-                embed=embed,
-                view=RoleSelectionView(self.bot)
-            )
-        except discord.Forbidden:
-            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
+        # Find a suitable channel to send the message (default to system channel)
+        channel = guild.system_channel or next(
+            (ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages),
+            None
+        )
+
+        if not channel:
+            print(f"Could not find a channel to send the welcome message in guild: {guild.name}")
+            return
+
+        await channel.send(embed=embed, view=RoleSelectionView(self.bot))
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
