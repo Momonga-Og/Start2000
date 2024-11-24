@@ -2,6 +2,11 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Button
 
+# Bot intents
+intents = discord.Intents.default()
+intents.members = True  # To track member events like join
+intents.messages = True  # Ensure the bot can handle messages
+
 # Role data
 ROLE_DATA = {
     "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
@@ -14,7 +19,7 @@ ROLE_DATA = {
     "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
 }
 
-SERVER_ID = 1217700740949348443
+SERVER_ID = 1217700740949348443  # Your server's ID
 
 
 class RoleSelectionView(View):
@@ -60,8 +65,9 @@ class RoleCog(commands.Cog):
                 view=view,
             )
         except discord.Forbidden:
-            print(f"Impossible d'envoyer un message à {member}.")
+            print(f"Impossible d'envoyer un message à {member}. Le DM est probablement désactivé.")
 
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
+
