@@ -29,31 +29,20 @@ class RoleButton(discord.ui.Button):
         self.role_id = role_id
 
     async def callback(self, interaction: discord.Interaction):
-        member = interaction.user
+        """Assigns the role to the user when they click the button."""
+        guild = interaction.client.guilds[0]  # Replace with specific guild ID if needed
+        member = guild.get_member(interaction.user.id)
 
-        # Fetch the guild from the bot's cache or API
-        guild_id = interaction.client.guilds[0].id  # Adjust if multiple guilds are involved
-        guild = interaction.client.get_guild(guild_id)
-        
-        if not guild:
-            # Fallback to fetching the guild if not in cache
+        if not member:
+            # Fallback to fetching the member directly if they aren't cached
             try:
-                guild = await interaction.client.fetch_guild(guild_id)
-            except discord.HTTPException:
+                member = await guild.fetch_member(interaction.user.id)
+            except discord.NotFound:
                 await interaction.response.send_message(
-                    "Unable to fetch the server. Please contact an admin.",
+                    "You must be a member of the server to use this action.",
                     ephemeral=True
                 )
                 return
-
-        # Ensure the member is in the guild
-        member_in_guild = guild.get_member(member.id)
-        if not member_in_guild:
-            await interaction.response.send_message(
-                "You must be a member of the server to use this action.",
-                ephemeral=True
-            )
-            return
 
         # Fetch the roles
         role = guild.get_role(self.role_id)
@@ -67,11 +56,22 @@ class RoleButton(discord.ui.Button):
             return
 
         # Assign roles
-        await member_in_guild.add_roles(role, additional_role)
-        await interaction.response.send_message(
-            f"You have been assigned to **{self.guild_name}** and an additional role!",
-            ephemeral=True
-        )
+        try:
+            await member.add_roles(role, additional_role)
+            await interaction.response.send_message(
+                f"You have been assigned to **{self.guild_name}** and an additional role!",
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "I do not have permission to assign roles. Please contact an admin.",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            await interaction.response.send_message(
+                f"An error occurred while assigning the roles: {e}",
+                ephemeral=True
+            )
 
 class RoleCog(commands.Cog):
     def __init__(self, bot):
