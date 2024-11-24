@@ -1,51 +1,35 @@
 import discord
 from discord.ext import commands
 
-# Replace with your bot's token
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-
-# Guild role configuration
-ROLE_DATA = {
-    "Darkness": {"emoji": "🌑", "role_id": 1300093554064097407},
-    "GTO": {"emoji": "🚗", "role_id": 1300093554080612363},
-    "Aversion": {"emoji": "⚔️", "role_id": 1300093554064097409},
-    "Bonnebuche": {"emoji": "🍂", "role_id": 1300093554080612365},
-    "LMDF": {"emoji": "🌲", "role_id": 1300093554080612364},
-    "Notorious": {"emoji": "💀", "role_id": 1300093554064097406},
-    "Percophile": {"emoji": "🎵", "role_id": 1300093554080612362},
-    "Tilisquad": {"emoji": "🔥", "role_id": 1300093554080612367},
-}
-
-# Additional role to assign to all users
+# Replace this ID with the ID of the additional role to assign to all users.
 ADDITIONAL_ROLE_ID = 1258492552605335645
 
-# The ID of the channel where the bot will post the role selection message
-ROLE_CHANNEL_ID = 123456789012345678  # Replace with your channel ID
-
-# Create a bot instance with the necessary intents
-intents = discord.Intents.default()
-intents.members = True  # Needed to fetch members and assign roles
-bot = commands.Bot(command_prefix="!", intents=intents)
-
+# Guild data
+GUILD_DATA = {
+    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
+    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
+    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
+    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
+    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
+    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
+    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
+    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
+}
 
 class RoleSelectionView(discord.ui.View):
-    """Interactive view for role selection."""
-
     def __init__(self):
-        super().__init__(timeout=None)  # No timeout for persistent buttons
-        for role_name, role_info in ROLE_DATA.items():
-            self.add_item(RoleButton(role_name, role_info["emoji"], role_info["role_id"]))
-
+        super().__init__(timeout=None)  # No timeout for this view
+        for guild_name, guild_info in GUILD_DATA.items():
+            self.add_item(RoleButton(guild_name, guild_info["emoji"], guild_info["role_id"]))
 
 class RoleButton(discord.ui.Button):
-    """A button for assigning a specific role."""
-
-    def __init__(self, role_name, emoji, role_id):
-        super().__init__(label=role_name, emoji=emoji, style=discord.ButtonStyle.primary)
-        self.role_name = role_name
+    def __init__(self, guild_name, emoji, role_id):
+        super().__init__(label=guild_name, emoji=emoji, style=discord.ButtonStyle.primary)
+        self.guild_name = guild_name
         self.role_id = role_id
 
     async def callback(self, interaction: discord.Interaction):
+        """Assigns the role to the user when they click the button."""
         guild = interaction.guild
         member = interaction.user
 
@@ -69,7 +53,7 @@ class RoleButton(discord.ui.Button):
         try:
             await member.add_roles(role, additional_role, reason="Role assigned via button interaction.")
             await interaction.response.send_message(
-                f"You have been assigned to **{self.role_name}** and an additional role!",
+                f"You have been assigned to **{self.guild_name}** and the additional role!",
                 ephemeral=True
             )
         except discord.Forbidden:
@@ -83,54 +67,51 @@ class RoleButton(discord.ui.Button):
                 ephemeral=True
             )
 
+class RoleCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-@bot.event
-async def on_ready():
-    """Triggered when the bot is ready."""
-    print(f"Logged in as {bot.user} ({bot.user.id})")
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        """Triggered when a member joins the server."""
+        await self.send_welcome_message(member)
 
-    # Get the role selection channel
-    guild = bot.guilds[0]  # Assuming the bot is in only one server
-    channel = guild.get_channel(ROLE_CHANNEL_ID)
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        """Fallback: Trigger when a new member sends their first message."""
+        if message.author.bot:
+            return  # Ignore bot messages
 
-    if not channel:
-        print(f"Channel with ID {ROLE_CHANNEL_ID} not found.")
-        return
+        member = message.author
+        guild = message.guild
 
-    # Check if the message already exists
-    async for message in channel.history(limit=10):  # Check recent messages for redundancy
-        if message.author == bot.user and message.content.startswith("**Role Selection**"):
-            print("Role selection message already exists.")
-            return
+        if guild is None:
+            return  # Ignore DMs
 
-    # Send the role selection message
-    embed = discord.Embed(
-        title="Role Selection",
-        description=(
-            "Welcome to the server! Click the buttons below to select your guild role.\n\n"
-            "You will also be assigned an alliance role automatically."
-        ),
-        color=discord.Color.blue()
-    )
-    await channel.send("**Role Selection**", embed=embed, view=RoleSelectionView())
+        if len(member.roles) <= 1:  # The default role doesn't count
+            await self.send_welcome_message(member)
 
+    async def send_welcome_message(self, member: discord.Member):
+        """Send a welcome message to a new member via private message."""
+        embed = discord.Embed(
+            title="Welcome to the Alliance!",
+            description=(
+                "Welcome to the server! Please select your guild from the buttons below "
+                "to get the appropriate role. You'll also receive an additional role for being part of the alliance."
+            ),
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Choose wisely!")
+        embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
 
-@bot.event
-async def on_member_join(member: discord.Member):
-    """DM the member with a welcome message on joining."""
-    embed = discord.Embed(
-        title="Welcome to the Alliance!",
-        description=(
-            "Welcome to the server! Please visit the role selection channel to choose your guild role.\n"
-            "You'll receive an additional role automatically upon selection."
-        ),
-        color=discord.Color.green()
-    )
+        try:
+            await member.send(
+                content="Welcome to the server!",
+                embed=embed,
+                view=RoleSelectionView()
+            )
+        except discord.Forbidden:
+            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
 
-    try:
-        await member.send(embed=embed)
-    except discord.Forbidden:
-        print(f"Could not DM {member.name}. They may have DMs disabled.")
-
-
-bot.run(BOT_TOKEN)
+async def setup(bot):
+    await bot.add_cog(RoleCog(bot))
