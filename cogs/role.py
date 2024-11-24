@@ -22,11 +22,13 @@ class RoleSelectionView(discord.ui.View):
         self.bot = bot
         self.guild_id = guild_id
         for guild_name, guild_info in GUILD_DATA.items():
-            self.add_item(RoleButton(guild_name, guild_info["emoji"], guild_info["role_id"], guild_id))
+            self.add_item(RoleButton(bot, guild_name, guild_info["emoji"], guild_info["role_id"], guild_id))
+
 
 class RoleButton(discord.ui.Button):
-    def __init__(self, guild_name, emoji, role_id, guild_id):
+    def __init__(self, bot, guild_name, emoji, role_id, guild_id):
         super().__init__(label=guild_name, emoji=emoji, style=discord.ButtonStyle.primary)
+        self.bot = bot
         self.guild_name = guild_name
         self.role_id = role_id
         self.guild_id = guild_id
@@ -70,6 +72,7 @@ class RoleButton(discord.ui.Button):
                 ephemeral=True
             )
 
+
 class RoleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -108,23 +111,14 @@ class RoleCog(commands.Cog):
         embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
 
         try:
-            # Attempt to send a DM
             await member.send(
                 content="Welcome to the server!",
                 embed=embed,
                 view=RoleSelectionView(self.bot, member.guild.id)
             )
         except discord.Forbidden:
-            # Fallback to sending a message in a public channel if DMs are disabled
-            channel = discord.utils.get(member.guild.text_channels, name="welcome")
-            if channel:
-                await channel.send(
-                    content=f"{member.mention}, welcome to the server! Please check your DMs for role selection.",
-                    embed=embed,
-                    view=RoleSelectionView(self.bot, member.guild.id)
-                )
-            else:
-                print(f"Could not send a DM or find a 'welcome' channel for {member.name}.")
+            print(f"Could not send a DM to {member.name}. They may have DMs disabled.")
+
 
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))
