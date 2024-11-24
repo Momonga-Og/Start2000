@@ -6,14 +6,14 @@ ADDITIONAL_ROLE_ID = 1300093554080612361
 
 # Guild data
 GUILD_DATA = {
-    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1246615518279106601},
-    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1246615520007028769},
-    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1246615521181306932},
-    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1258495515985707158},
-    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1244077334668116050},
-    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1246615518279106601},
-    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1246615520007028769},
-    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1246615521181306932},
+    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
+    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
+    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
+    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
+    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
+    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
+    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
+    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
 }
 
 class RoleSelectionView(discord.ui.View):
@@ -30,6 +30,13 @@ class RoleButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         guild = interaction.guild
+        if guild is None:
+            await interaction.response.send_message(
+                "This interaction can only be used in a server.",
+                ephemeral=True
+            )
+            return
+
         member = interaction.user
         role = guild.get_role(self.role_id)
         additional_role = guild.get_role(ADDITIONAL_ROLE_ID)
@@ -42,11 +49,22 @@ class RoleButton(discord.ui.Button):
             return
 
         # Assign roles
-        await member.add_roles(role, additional_role)
-        await interaction.response.send_message(
-            f"You have been assigned to **{self.guild_name}** and an additional role!",
-            ephemeral=True
-        )
+        try:
+            await member.add_roles(role, additional_role)
+            await interaction.response.send_message(
+                f"You have been assigned to **{self.guild_name}** and an additional role!",
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "I do not have permission to assign roles. Please contact an admin.",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            await interaction.response.send_message(
+                f"An error occurred: {str(e)}",
+                ephemeral=True
+            )
 
 class RoleCog(commands.Cog):
     def __init__(self, bot):
@@ -56,23 +74,6 @@ class RoleCog(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         """Triggered when a member joins the server."""
         await self.send_welcome_message(member)
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        """Fallback: Trigger when a new member sends their first message."""
-        if message.author.bot:
-            return  # Ignore bot messages
-
-        member = message.author
-        guild = message.guild
-
-        if guild is None:
-            return  # Ignore DMs
-
-        # Check if the member has no roles (likely new member)
-        if len(member.roles) <= 1:  # The default role doesn't count
-            print(f"Detected new member via message: {member.name}")
-            await self.send_welcome_message(member)
 
     async def send_welcome_message(self, member: discord.Member):
         """Send a welcome message to a new member via private message."""
