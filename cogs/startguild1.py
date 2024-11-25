@@ -24,7 +24,7 @@ def save_emojis_roles(data):
     with open(EMOJIS_ROLES_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Slash command to add a new guild emoji, role, and logo
+# Modal for adding new guild emoji, role, and logo
 class NewGuildModal(Modal):
     def __init__(self):
         super().__init__(title="Ajouter un nouvel emoji et un rôle")
@@ -79,6 +79,7 @@ class NewGuildModal(Modal):
         # Update the button panel
         await update_button_panel(self.bot)
 
+# Main cog to handle commands
 class NewGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -88,15 +89,12 @@ class NewGuildCog(commands.Cog):
         # Logic for adding emojis, roles, and logos here
         await interaction.response.send_message("New guild command received!")
 
-
     async def ensure_panel(self):
         guild = self.bot.get_guild(GUILD_ID)
         if not guild:
             print("Guild not found. Check the GUILD_ID.")
             return
-           @commands.Cog.listener()
-async def on_ready(self):
-    await self.bot.tree.sync()  # Sync the commands when the bot is ready
+        
         channel = guild.get_channel(PING_DEF_CHANNEL_ID)
         if not channel:
             print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
@@ -104,12 +102,14 @@ async def on_ready(self):
 
         await update_button_panel(self.bot)
 
+    @commands.Cog.listener()
     async def on_ready(self):
-        await self.ensure_panel()
+        await self.ensure_panel()  # Ensure the panel is updated when the bot is ready
 
     async def setup(self, bot: commands.Bot):
         await bot.add_cog(NewGuildCog(bot))
 
+# Function to update the button panel
 async def update_button_panel(bot: commands.Bot):
     # Load the emojis and roles from file
     emojis_roles = load_emojis_roles()
@@ -142,6 +142,7 @@ async def update_button_panel(bot: commands.Bot):
     )
     await channel.send(content=message_content, view=view)
 
+# Function to create the callback for each button
 async def create_ping_callback(guild_name, data):
     async def callback(interaction: discord.Interaction):
         try:
@@ -183,5 +184,7 @@ async def create_ping_callback(guild_name, data):
             await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
 
     return callback
+
+# Setup function for adding the cog
 async def setup(bot: commands.Bot):
     await bot.add_cog(NewGuildCog(bot))
