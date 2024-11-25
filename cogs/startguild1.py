@@ -88,7 +88,7 @@ class NewGuildModal(Modal):
         # Update the button panel
         await update_button_panel(self.bot)
 
-class NewGuildCog(commands.Cog):
+class StartGuild1Cog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -117,7 +117,7 @@ class NewGuildCog(commands.Cog):
         await self.ensure_panel()
 
     async def setup(self, bot: commands.Bot):
-        await bot.add_cog(NewGuildCog(bot))
+        await bot.add_cog(StartGuild1Cog(bot))
 
 async def update_button_panel(bot: commands.Bot):
     # Load the emojis and roles from file
@@ -195,4 +195,4 @@ async def create_ping_callback(guild_name, data):
 
 # Setup function for adding the cog
 async def setup(bot: commands.Bot):
-    await bot.add_cog(startguild1Cog(bot))
+    await bot.add_cog(StartGuildCog(bot))
