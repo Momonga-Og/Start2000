@@ -21,7 +21,7 @@ GUILD_EMOJIS_ROLES = {
 
 ALERT_MESSAGES = [
     "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
-    ⚔️ {role}, il est temps de défendre !",
+    "⚔️ {role}, il est temps de défendre !",
     "🛡️ {role} Défendez votre guilde !",
     "💥 {role} est attaquée ! Rejoignez la défense !",
     "⚠️ {role}, mobilisez votre équipe pour défendre !",
