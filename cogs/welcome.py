@@ -12,7 +12,6 @@ class Welcome(commands.Cog):
         self.bot = bot
         self.guild_id = 1217700740949348443  # Your guild ID here
         self.welcome_channel_id = 1247728759780413480  # Welcome channel ID for announcements
-        self.leave_channel_id = 1247728782559809558  # Leave channel ID
         self.default_font_path = "arial.ttf"  # Path to the font file
 
     async def generate_banner(self, member):
@@ -53,10 +52,12 @@ class Welcome(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         """Handle when a member joins the server."""
-        logging.info(f"{member.name} has joined the server.")
+        logging.info(f"Event triggered: {member.name} joined the server.")
         if member.guild.id == self.guild_id:
+            logging.info(f"Member joined guild with ID: {self.guild_id}.")
             channel = self.bot.get_channel(self.welcome_channel_id)
             if channel:
+                logging.info(f"Sending welcome message to channel ID: {self.welcome_channel_id}.")
                 # Generate banner
                 banner = await self.generate_banner(member)
                 if banner:
@@ -68,17 +69,6 @@ class Welcome(commands.Cog):
                     await channel.send(f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉")
             else:
                 logging.error("Welcome channel not found.")
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        """Handle when a member leaves the server."""
-        logging.info(f"{member.name} has left the server.")
-        if member.guild.id == self.guild_id:
-            channel = self.bot.get_channel(self.leave_channel_id)
-            if channel:
-                await channel.send(f"{member.name} has left the server. Goodbye!")
-            else:
-                logging.error("Leave channel not found.")
 
 async def setup(bot):
     """Setup the cog."""
