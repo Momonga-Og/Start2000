@@ -135,7 +135,7 @@ async def close_sessions():
     logger.info("Performing cleanup before closing...")
 
 EXTENSIONS = [
-    'cogs.admin',
+    'cogs.admin', 'cogs.percoattack',
     'cogs.relocate', 'cogs.watermark', 'cogs.talk', 'cogs.role',
     'cogs.watermark_user', 'cogs.metiers',
     'cogs.image_converter', 'cogs.startguild1',
