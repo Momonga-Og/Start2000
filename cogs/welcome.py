@@ -29,55 +29,54 @@ class Welcome(commands.Cog):
         self.poll_new_members.cancel()
 
     async def generate_banner(self, member):
-    """Generate a welcome banner with the user's name and avatar in a modern style."""
-    try:
-        # Define dimensions and colors
-        width, height = 800, 300
-        background_color = (47, 49, 54)  # Discord dark theme background
-        text_color = (255, 255, 255)    # White text
-        accent_color = (30, 144, 255)  # Accent color (blue)
-
-        # Create base image
-        banner = Image.new('RGB', (width, height), color=background_color)
-        draw = ImageDraw.Draw(banner)
-
-        # Load font
+        """Generate a welcome banner with the user's name and avatar in a modern style."""
         try:
-            font_large = ImageFont.truetype(self.default_font_path, 60)
-            font_small = ImageFont.truetype(self.default_font_path, 40)
-        except IOError:
-            logging.error("Font file not found. Ensure 'arial.ttf' is available.")
-            raise
+            # Define dimensions and colors
+            width, height = 800, 300
+            background_color = (47, 49, 54)  # Discord dark theme background
+            text_color = (255, 255, 255)    # White text
+            accent_color = (30, 144, 255)  # Accent color (blue)
 
-        # Add circular avatar
-        avatar_data = await member.avatar.read()  # Download avatar
-        avatar_image = Image.open(io.BytesIO(avatar_data)).convert("RGBA").resize((200, 200))
+            # Create base image
+            banner = Image.new('RGB', (width, height), color=background_color)
+            draw = ImageDraw.Draw(banner)
 
-        # Create a mask for the circular crop
-        mask = Image.new("L", (200, 200), 0)
-        mask_draw = ImageDraw.Draw(mask)
-        mask_draw.ellipse((0, 0, 200, 200), fill=255)
+            # Load font
+            try:
+                font_large = ImageFont.truetype(self.default_font_path, 60)
+                font_small = ImageFont.truetype(self.default_font_path, 40)
+            except IOError:
+                logging.error("Font file not found. Ensure 'arial.ttf' is available.")
+                raise
 
-        # Paste avatar onto the banner with circular cropping
-        avatar_circular = Image.new("RGBA", (200, 200))
-        avatar_circular.paste(avatar_image, (0, 0), mask=mask)
-        banner.paste(avatar_circular, (50, 50), mask=avatar_circular.split()[3])
+            # Add circular avatar
+            avatar_data = await member.avatar.read()  # Download avatar
+            avatar_image = Image.open(io.BytesIO(avatar_data)).convert("RGBA").resize((200, 200))
 
-        # Add welcome text
-        draw.text((300, 90), "Bienvenue", font=font_large, fill=text_color)
-        draw.text((300, 160), "sur le serveur Discord", font=font_small, fill=text_color)
-        draw.text((300, 220), "Alliance ST'ART", font=font_large, fill=accent_color)
+            # Create a mask for the circular crop
+            mask = Image.new("L", (200, 200), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.ellipse((0, 0, 200, 200), fill=255)
 
-        # Save banner to a bytes object
-        output = io.BytesIO()
-        banner.save(output, format="PNG")
-        output.seek(0)
-        return output
+            # Paste avatar onto the banner with circular cropping
+            avatar_circular = Image.new("RGBA", (200, 200))
+            avatar_circular.paste(avatar_image, (0, 0), mask=mask)
+            banner.paste(avatar_circular, (50, 50), mask=avatar_circular.split()[3])
 
-    except Exception as e:
-        logging.error(f"Error generating banner for {member.name}: {e}")
-        return None
+            # Add welcome text
+            draw.text((300, 90), "Bienvenue", font=font_large, fill=text_color)
+            draw.text((300, 160), "sur le serveur Discord", font=font_small, fill=text_color)
+            draw.text((300, 220), "Alliance ST'ART", font=font_large, fill=accent_color)
 
+            # Save banner to a bytes object
+            output = io.BytesIO()
+            banner.save(output, format="PNG")
+            output.seek(0)
+            return output
+
+        except Exception as e:
+            logging.error(f"Error generating banner for {member.name}: {e}")
+            return None
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
