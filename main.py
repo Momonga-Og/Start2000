@@ -130,6 +130,10 @@ async def on_close():
     logger.info("Bot is closing")
     await close_sessions()
 
+async def close_sessions():
+    # If you need to handle any special cleanup or final database writes, do it here
+    logger.info("Performing cleanup before closing...")
+
 EXTENSIONS = [
     'cogs.admin',
     'cogs.relocate', 'cogs.watermark', 'cogs.talk', 'cogs.role',
