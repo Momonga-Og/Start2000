@@ -42,32 +42,29 @@ class PercoView(View):
         self.message = None  # To store the message this view is attached to
 
     @discord.ui.button(label="Réclamé", style=discord.ButtonStyle.green)
-    async def claimed_button(self, button: Button, interaction: discord.Interaction):
+    async def claimed_button(self, interaction: discord.Interaction, button: Button):
         if self.claimed:
             await interaction.response.send_message("Cette action a déjà été effectuée !", ephemeral=True)
         else:
             self.claimed = True
-            button.label = "Réclamé ✔"  # Update button label
-            self.disable_buttons()
+            self.update_buttons("Réclamé ✔", discord.ButtonStyle.green)
             await interaction.response.send_message(f"{interaction.user.mention} a réclamé le perco.", ephemeral=False)
             await interaction.message.edit(view=self)  # Update the message
 
     @discord.ui.button(label="Pas encore réclamé", style=discord.ButtonStyle.red)
-    async def not_claimed_button(self, button: Button, interaction: discord.Interaction):
+    async def not_claimed_button(self, interaction: discord.Interaction, button: Button):
         if self.claimed:
             await interaction.response.send_message("Cette action a déjà été effectuée !", ephemeral=True)
         else:
             self.claimed = True
-            button.label = "Pas encore réclamé ❌"  # Update button label
-            self.disable_buttons()
+            self.update_buttons("Pas encore réclamé ❌", discord.ButtonStyle.red)
             await interaction.response.send_message(f"{interaction.user.mention} n'a pas réclamé le perco.", ephemeral=False)
             await interaction.message.edit(view=self)  # Update the message
 
-    def disable_buttons(self):
-        """Disable all buttons after one is clicked."""
-        for child in self.children:
-            if isinstance(child, Button):
-                child.disabled = True
+    def update_buttons(self, new_label, new_style):
+        """Replaces the buttons with updated ones."""
+        self.clear_items()  # Remove all existing buttons
+        self.add_item(Button(label=new_label, style=new_style, disabled=True))  # Add the updated button
 
 # Set up the cog
 async def setup(bot):
