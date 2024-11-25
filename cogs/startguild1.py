@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from discord.ui import View, Button, Modal, TextInput
 import json
 import random
@@ -82,18 +83,20 @@ class NewGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.slash_command(name="newguild", description="Ajoutez un nouvel emoji, rôle et logo.")
+    @app_commands.command(name="newguild", description="Ajoutez un nouvel emoji, rôle et logo.")
     async def newguild(self, interaction: discord.Interaction):
-        # Open the modal for user input
-        modal = NewGuildModal()
-        await interaction.response.send_modal(modal)
+        # Logic for adding emojis, roles, and logos here
+        await interaction.response.send_message("New guild command received!")
+
 
     async def ensure_panel(self):
         guild = self.bot.get_guild(GUILD_ID)
         if not guild:
             print("Guild not found. Check the GUILD_ID.")
             return
-
+           @commands.Cog.listener()
+async def on_ready(self):
+    await self.bot.tree.sync()  # Sync the commands when the bot is ready
         channel = guild.get_channel(PING_DEF_CHANNEL_ID)
         if not channel:
             print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
@@ -180,3 +183,5 @@ async def create_ping_callback(guild_name, data):
             await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
 
     return callback
+async def setup(bot: commands.Bot):
+    await bot.add_cog(NewGuildCog(bot))
