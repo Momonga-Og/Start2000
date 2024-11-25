@@ -40,7 +40,22 @@ def init_db():
     db_path = 'conversation_history.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS conversation (user_id INTEGER, prompt TEXT, response TEXT)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS conversation (
+                        user_id INTEGER, 
+                        prompt TEXT, 
+                        response TEXT,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )''')
+    conn.commit()
+    conn.close()
+
+# Insert conversation data into the database
+def insert_conversation(user_id, prompt, response):
+    db_path = 'conversation_history.db'
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''INSERT INTO conversation (user_id, prompt, response) VALUES (?, ?, ?)''', 
+                   (user_id, prompt, response))
     conn.commit()
     conn.close()
 
@@ -85,6 +100,14 @@ async def memory_command(ctx):
 
 @bot.event
 async def on_message(message: discord.Message):
+    # Check if the message is from a user (not the bot itself)
+    if message.author != bot.user:
+        prompt = message.content
+        response = "This is a placeholder response"  # Replace with actual bot logic if needed
+        # Save conversation in the database
+        insert_conversation(message.author.id, prompt, response)
+        logger.info(f"Stored conversation for user {message.author.id}: {prompt} -> {response}")
+
     if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
         await forward_dm(message)
     await bot.process_commands(message)
@@ -109,13 +132,12 @@ async def on_close():
 
 EXTENSIONS = [
     'cogs.admin',
-    'cogs.relocate', 'cogs.watermark','cogs.talk','cogs.role',
+    'cogs.relocate', 'cogs.watermark', 'cogs.talk', 'cogs.role',
     'cogs.watermark_user', 'cogs.metiers',
-    'cogs.image_converter','cogs.startguild1',
+    'cogs.image_converter', 'cogs.startguild1',
     'cogs.welcome',
-    'cogs.super','cogs.translator','cogs.voice',
+    'cogs.super', 'cogs.translator', 'cogs.voice',
 ]
-
 
 async def load_extensions():
     for extension in EXTENSIONS:
