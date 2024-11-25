@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
+from io import BytesIO
 
 class PercoAttack(commands.Cog):
     def __init__(self, bot):
@@ -17,9 +18,12 @@ class PercoAttack(commands.Cog):
             for attachment in message.attachments:
                 if attachment.content_type and attachment.content_type.startswith("image/"):
                     # Download the image
-                    image = await attachment.read()
+                    image_data = await attachment.read()
+                    image_file = BytesIO(image_data)
+                    image_file.seek(0)
+                    
                     # Repost the image with buttons
-                    file = discord.File(fp=image, filename=attachment.filename)
+                    file = discord.File(fp=image_file, filename=attachment.filename)
                     view = PercoView()
                     await message.channel.send(file=file, content=f"{message.author.mention} a posté une image :", view=view)
 
@@ -57,4 +61,3 @@ class PercoView(View):
 # Set up the cog
 async def setup(bot):
     await bot.add_cog(PercoAttack(bot))
-
