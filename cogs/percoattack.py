@@ -55,5 +55,6 @@ class PercoView(View):
                 child.disabled = True
 
 # Set up the cog
-def setup(bot):
-    bot.add_cog(PercoAttack(bot))
+async def setup(bot):
+    await bot.add_cog(PercoAttack(bot))
+
