@@ -1,5 +1,7 @@
 import discord
 from discord.ext import commands
+from PIL import Image, ImageDraw, ImageFont
+import io
 import logging
 
 # Enable logging for debugging
@@ -13,39 +15,35 @@ class Welcome(commands.Cog):
         self.leave_channel_id = 1247728782559809558  # Default channel for leaving messages
         self.welcome_message = "Welcome, {user.name}! We're glad to have you here!"  # Default welcome message
 
-    def set_channel(self, channel_id):
-        """Store the welcome channel ID."""
-        self.welcome_channel_id = channel_id
+    async def generate_banner(self, member):
+        """Generate a welcome banner with the user's name and avatar."""
+        # Load or create a base image for the banner
+        banner = Image.new('RGB', (800, 300), color=(30, 144, 255))  # Blue background
+        draw = ImageDraw.Draw(banner)
 
-    def set_message(self, message):
-        """Store the welcome message."""
-        self.welcome_message = message
+        # Load a font (you can replace 'arial.ttf' with a path to your preferred font)
+        font = ImageFont.truetype("arial.ttf", 40)  # Adjust size as needed
+        small_font = ImageFont.truetype("arial.ttf", 30)
 
-    async def create_welcome_embed(self, member):
-        """Create an embed message to welcome a new user."""
-        embed = discord.Embed(
-            title="Welcome to the Server!",
-            description=f"Bienvenue {member.mention} dans le serveur!",
-            color=discord.Color.green()
-        )
-        embed.set_thumbnail(url=member.avatar.url)
-        embed.add_field(name="Username", value=member.name, inline=True)
-        embed.add_field(name="User ID", value=member.id, inline=True)
-        embed.set_footer(text="Nous espérons que vous passerez un bon moment ici !")
-        return embed
+        # Add welcome text
+        text = f"Welcome, {member.name}!"
+        draw.text((20, 20), text, font=font, fill="white")
 
-    async def create_leave_embed(self, member):
-        """Create an embed message to announce when a user leaves."""
-        embed = discord.Embed(
-            title="A user has left the server",
-            description=f"Au revoir {member.mention}, tu vas nous manquer !",
-            color=discord.Color.red()
-        )
-        embed.set_thumbnail(url=member.avatar.url)
-        embed.add_field(name="Username", value=member.name, inline=True)
-        embed.add_field(name="User ID", value=member.id, inline=True)
-        embed.set_footer(text="On espère te revoir bientôt !")
-        return embed
+        # Add server info
+        draw.text((20, 80), f"We're happy to have you here!", font=small_font, fill="white")
+
+        # Download the member's avatar
+        avatar_data = await member.avatar.read()
+        avatar_image = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
+
+        # Paste the avatar onto the banner
+        banner.paste(avatar_image, (620, 75))
+
+        # Save banner to a bytes object
+        output = io.BytesIO()
+        banner.save(output, format="PNG")
+        output.seek(0)
+        return output
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -54,8 +52,8 @@ class Welcome(commands.Cog):
         if member.guild.id == self.guild_id:
             channel = self.bot.get_channel(self.welcome_channel_id)
             if channel:
-                embed = await self.create_welcome_embed(member)
-                await channel.send(embed=embed)
+                banner = await self.generate_banner(member)
+                await channel.send(file=discord.File(banner, filename="welcome_banner.png"))
             else:
                 logging.error("Welcome channel not found.")
 
@@ -66,8 +64,7 @@ class Welcome(commands.Cog):
         if member.guild.id == self.guild_id:
             channel = self.bot.get_channel(self.leave_channel_id)
             if channel:
-                embed = await self.create_leave_embed(member)
-                await channel.send(embed=embed)
+                await channel.send(f"{member.name} has left the server. Goodbye!")
             else:
                 logging.error("Leave channel not found.")
 
@@ -80,46 +77,6 @@ class Welcome(commands.Cog):
         # Example response logic: Reply if a user says "hello"
         if "hello" in message.content.lower():
             await message.channel.send(f"Hello, {message.author.mention}! Welcome to the server!")
-
-    @discord.app_commands.command(name='welcome-channel', description='Sets the welcome channel')
-    async def welcome_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        if interaction.guild.id != self.guild_id:
-            await interaction.response.send_message("This command is only available in the specific server.")
-            return
-        
-        if self.welcome_channel_id == channel.id:
-            await interaction.response.send_message("This channel is already the welcome channel.")
-        else:
-            self.set_channel(channel.id)
-            await interaction.response.send_message(f"Welcome channel set to {channel.mention}.")
-
-    @discord.app_commands.command(name='welcome-message', description='Sets the welcome message')
-    async def welcome_message(self, interaction: discord.Interaction, message: str):
-        if interaction.guild.id != self.guild_id:
-            await interaction.response.send_message("This command is only available in the specific server.")
-            return
-        
-        if self.welcome_message == message:
-            await interaction.response.send_message("This message is already set as the welcome message.")
-        else:
-            self.set_message(message)
-            await interaction.response.send_message("Welcome message set successfully.")
-
-    @discord.app_commands.command(name='welcome-test', description='Sends a test welcome message')
-    async def welcome_test(self, interaction: discord.Interaction):
-        if interaction.guild.id != self.guild_id:
-            await interaction.response.send_message("This command is only available in the specific server.")
-            return
-        
-        channel = self.bot.get_channel(self.welcome_channel_id)
-        if channel:
-            message = self.welcome_message
-            message = message.replace("{user.name}", interaction.user.name)
-            message = message.replace("{user.mention}", interaction.user.mention)
-            await channel.send(message)
-            await interaction.response.send_message("Test welcome message sent.")
-        else:
-            await interaction.response.send_message("Welcome channel not found.")
 
 async def setup(bot):
     """Setup the cog."""
