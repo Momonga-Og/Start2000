@@ -15,16 +15,25 @@ EMOJIS_ROLES_FILE = "guild_emojis_roles.json"  # File to store emoji-role data
 def load_emojis_roles():
     try:
         with open(EMOJIS_ROLES_FILE, "r") as f:
-            return json.load(f)
+            data = f.read().strip()
+            if not data:
+                return {}  # If file is empty, return an empty dictionary
+            return json.loads(data)
     except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error decoding {EMOJIS_ROLES_FILE}. Returning empty dictionary.")
         return {}
 
 # Function to save the emoji-role data
 def save_emojis_roles(data):
-    with open(EMOJIS_ROLES_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    try:
+        with open(EMOJIS_ROLES_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"Error saving {EMOJIS_ROLES_FILE}: {e}")
 
-# Modal for adding new guild emoji, role, and logo
+# Slash command to add a new guild emoji, role, and logo
 class NewGuildModal(Modal):
     def __init__(self):
         super().__init__(title="Ajouter un nouvel emoji et un rôle")
@@ -79,7 +88,6 @@ class NewGuildModal(Modal):
         # Update the button panel
         await update_button_panel(self.bot)
 
-# Main cog to handle commands
 class NewGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -95,21 +103,22 @@ class NewGuildCog(commands.Cog):
             print("Guild not found. Check the GUILD_ID.")
             return
         
-        channel = guild.get_channel(PING_DEF_CHANNEL_ID)
-        if not channel:
-            print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
-            return
+        @commands.Cog.listener()
+        async def on_ready(self):
+            await self.bot.tree.sync()  # Sync the commands when the bot is ready
+            channel = guild.get_channel(PING_DEF_CHANNEL_ID)
+            if not channel:
+                print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
+                return
 
-        await update_button_panel(self.bot)
+            await update_button_panel(self.bot)
 
-    @commands.Cog.listener()
     async def on_ready(self):
-        await self.ensure_panel()  # Ensure the panel is updated when the bot is ready
+        await self.ensure_panel()
 
     async def setup(self, bot: commands.Bot):
         await bot.add_cog(NewGuildCog(bot))
 
-# Function to update the button panel
 async def update_button_panel(bot: commands.Bot):
     # Load the emojis and roles from file
     emojis_roles = load_emojis_roles()
@@ -142,7 +151,6 @@ async def update_button_panel(bot: commands.Bot):
     )
     await channel.send(content=message_content, view=view)
 
-# Function to create the callback for each button
 async def create_ping_callback(guild_name, data):
     async def callback(interaction: discord.Interaction):
         try:
@@ -187,4 +195,4 @@ async def create_ping_callback(guild_name, data):
 
 # Setup function for adding the cog
 async def setup(bot: commands.Bot):
-    await bot.add_cog(NewGuildCog(bot))
+    await bot.add_cog(startguild1Cog(bot))
