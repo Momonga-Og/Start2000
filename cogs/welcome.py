@@ -11,34 +11,44 @@ class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.guild_id = 1217700740949348443  # Your guild ID here
-        self.welcome_channel_id = 1247728759780413480  # Default channel for welcome messages
-        self.leave_channel_id = 1247728782559809558  # Default channel for leaving messages
-        self.welcome_message = "Welcome, {user.name}! We're glad to have you here!"  # Default welcome message
+        self.welcome_channel_id = 1247728759780413480  # Welcome channel ID for announcements
+        self.leave_channel_id = 1247728782559809558  # Leave channel ID
+        self.default_font_path = "arial.ttf"  # Path to the font file
 
     async def generate_banner(self, member):
         """Generate a welcome banner with the user's name and avatar."""
-        banner = Image.new('RGB', (800, 300), color=(30, 144, 255))  # Blue background
-        draw = ImageDraw.Draw(banner)
-        font = ImageFont.truetype("arial.ttf", 40)  # Adjust size as needed
-        small_font = ImageFont.truetype("arial.ttf", 30)
+        try:
+            banner = Image.new('RGB', (800, 300), color=(30, 144, 255))  # Blue background
+            draw = ImageDraw.Draw(banner)
 
-        # Add welcome text
-        text = f"Welcome, {member.name}!"
-        draw.text((20, 20), text, font=font, fill="white")
-        draw.text((20, 80), f"We're happy to have you here!", font=small_font, fill="white")
+            # Load fonts
+            try:
+                font = ImageFont.truetype(self.default_font_path, 40)
+                small_font = ImageFont.truetype(self.default_font_path, 30)
+            except IOError:
+                logging.error("Font file not found. Ensure 'arial.ttf' is available.")
+                raise
 
-        # Download the member's avatar
-        avatar_data = await member.avatar.read()
-        avatar_image = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
+            # Add welcome text
+            text = f"Welcome, {member.name}!"
+            draw.text((20, 20), text, font=font, fill="white")
+            draw.text((20, 80), f"We're happy to have you here!", font=small_font, fill="white")
 
-        # Paste the avatar onto the banner
-        banner.paste(avatar_image, (620, 75))
+            # Download the member's avatar
+            avatar_data = await member.avatar.read()
+            avatar_image = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
 
-        # Save banner to a bytes object
-        output = io.BytesIO()
-        banner.save(output, format="PNG")
-        output.seek(0)
-        return output
+            # Paste the avatar onto the banner
+            banner.paste(avatar_image, (620, 75))
+
+            # Save banner to a bytes object
+            output = io.BytesIO()
+            banner.save(output, format="PNG")
+            output.seek(0)
+            return output
+        except Exception as e:
+            logging.error(f"Error generating banner for {member.name}: {e}")
+            return None
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -47,8 +57,15 @@ class Welcome(commands.Cog):
         if member.guild.id == self.guild_id:
             channel = self.bot.get_channel(self.welcome_channel_id)
             if channel:
+                # Generate banner
                 banner = await self.generate_banner(member)
-                await channel.send(file=discord.File(banner, filename="welcome_banner.png"))
+                if banner:
+                    await channel.send(
+                        f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉",
+                        file=discord.File(banner, filename="welcome_banner.png")
+                    )
+                else:
+                    await channel.send(f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉")
             else:
                 logging.error("Welcome channel not found.")
 
@@ -62,32 +79,6 @@ class Welcome(commands.Cog):
                 await channel.send(f"{member.name} has left the server. Goodbye!")
             else:
                 logging.error("Leave channel not found.")
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        """Detects a new user when they send their first message."""
-        if message.author.bot:
-            return  # Ignore bots
-
-        user = message.author
-        server = message.guild
-
-        if server is None:
-            return  # Ignore DMs
-
-        # Check if the user has only the default role (new user)
-        if len(user.roles) <= 1:
-            logging.info(f"Detected new user: {user.name}. Sending welcome message...")
-            await self.send_welcome_message(user)
-
-    async def send_welcome_message(self, member: discord.Member):
-        """Send a direct message welcoming the new user."""
-        try:
-            await member.send(
-                "Welcome to the server! We're glad to have you here. Feel free to ask any questions or participate in discussions!"
-            )
-        except discord.Forbidden:
-            logging.warning(f"Could not send a DM to {member.name}. DMs might be disabled.")
 
 async def setup(bot):
     """Setup the cog."""
