@@ -3,14 +3,12 @@ from discord.ext import commands, tasks
 from PIL import Image, ImageDraw, ImageFont
 import io
 import logging
-import os
 
 # Enable logging for debugging
 logging.basicConfig(level=logging.INFO)
 
-# Setup intents
 intents = discord.Intents.default()
-intents.members = True  # Enables member join events
+intents.members = True  # Enables on_member_join event
 intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -33,9 +31,6 @@ class Welcome(commands.Cog):
     async def generate_banner(self, member):
         """Generate a welcome banner with the user's name and avatar."""
         try:
-            logging.info(f"Generating banner for {member.name}...")
-
-            # Create a blank banner
             banner = Image.new('RGB', (800, 300), color=(30, 144, 255))  # Blue background
             draw = ImageDraw.Draw(banner)
 
@@ -44,39 +39,25 @@ class Welcome(commands.Cog):
                 font = ImageFont.truetype(self.default_font_path, 40)
                 small_font = ImageFont.truetype(self.default_font_path, 30)
             except IOError:
-                logging.warning("Font file not found, using default font.")
-                font = ImageFont.load_default()
-                small_font = ImageFont.load_default()
+                logging.error("Font file not found. Ensure 'arial.ttf' is available.")
+                raise
 
             # Add welcome text
             text = f"Welcome, {member.name}!"
             draw.text((20, 20), text, font=font, fill="white")
-            draw.text((20, 80), "We're happy to have you here!", font=small_font, fill="white")
+            draw.text((20, 80), f"We're happy to have you here!", font=small_font, fill="white")
 
-            # Fetch the member's avatar
-            if member.avatar:  # Custom avatar exists
-                avatar_data = await member.avatar.read()
-            else:
-                logging.info("Using default avatar.")
-                avatar_data = await self.bot.user.default_avatar.read()
+            # Download the member's avatar
+            avatar_data = await member.avatar.read()
+            avatar_image = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
 
-            # Open avatar image
-            avatar_image = Image.open(io.BytesIO(avatar_data)).resize((150, 150)).convert("RGBA")
+            # Paste the avatar onto the banner
+            banner.paste(avatar_image, (620, 75))
 
-            # Create a circular mask for the avatar
-            mask = Image.new("L", avatar_image.size, 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, avatar_image.size[0], avatar_image.size[1]), fill=255)
-
-            # Paste the avatar onto the banner with the circular mask
-            banner.paste(avatar_image, (620, 75), mask)
-
-            # Save the banner to a bytes object
+            # Save banner to a bytes object
             output = io.BytesIO()
             banner.save(output, format="PNG")
             output.seek(0)
-
-            logging.info(f"Banner generated successfully for {member.name}.")
             return output
         except Exception as e:
             logging.error(f"Error generating banner for {member.name}: {e}")
@@ -85,26 +66,40 @@ class Welcome(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         """Handle when a member joins the server."""
-        logging.info(f"New member joined: {member.name}")
+        logging.info(f"Event triggered: {member.name} joined the server.")
         if member.guild.id == self.guild_id:
+            logging.info(f"Member joined guild with ID: {self.guild_id}.")
             channel = self.bot.get_channel(self.welcome_channel_id)
             if channel:
-                logging.info(f"Sending welcome message in channel ID: {self.welcome_channel_id}")
+                logging.info(f"Sending welcome message to channel ID: {self.welcome_channel_id}.")
                 # Generate banner
                 banner = await self.generate_banner(member)
                 if banner:
-                    try:
-                        await channel.send(
-                            f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉",
-                            file=discord.File(banner, filename="welcome_banner.png")
-                        )
-                    except Exception as e:
-                        logging.error(f"Failed to send banner for {member.name}: {e}")
+                    await channel.send(
+                        f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉",
+                        file=discord.File(banner, filename="welcome_banner.png")
+                    )
                 else:
-                    logging.warning("Failed to generate a banner, sending text-only message.")
-                    await channel.send(f"🎉 Welcome to the server, {member.mention}! 🎉")
+                    await channel.send(f"🎉 Welcome to the server, {member.mention}! We're thrilled to have you join us! 🎉")
             else:
                 logging.error("Welcome channel not found.")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Fallback: Detect a new user when they send their first message."""
+        if message.author.bot:
+            return  # Ignore bots
+        
+        guild = message.guild
+        if guild and guild.id == self.guild_id:
+            member = message.author
+            if len(member.roles) == 1:  # New users often have only the default role
+                channel = self.bot.get_channel(self.welcome_channel_id)
+                if channel:
+                    await channel.send(f"Welcome to the server, {member.mention}! 🎉")
+                    logging.info(f"Detected new member: {member.name}")
+                else:
+                    logging.error("Welcome channel not found.")
 
     @tasks.loop(seconds=30)  # Poll every 30 seconds
     async def poll_new_members(self):
@@ -144,4 +139,3 @@ class Welcome(commands.Cog):
 async def setup(bot):
     """Setup the cog."""
     await bot.add_cog(Welcome(bot))
-
