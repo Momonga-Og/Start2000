@@ -2,6 +2,23 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import pandas as pd
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+# MongoDB Configuration
+uri = os.getenv('MONGO_URI')
+client = MongoClient(uri, server_api=ServerApi('1'))
+
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 
 
 class Metiers(commands.Cog):
@@ -13,7 +30,6 @@ class Metiers(commands.Cog):
 
     @app_commands.command(name="metiers", description="Afficher les professions disponibles")
     async def metiers(self, interaction: discord.Interaction):
-        # Restrict command to specific server and channel
         if interaction.guild.id != 1248345019333611561 or interaction.channel.id != 1248345019333611561:
             await interaction.response.send_message(
                 "Cette commande n'est disponible que dans le canal **#║╟➢👷metiers**.",
@@ -28,27 +44,23 @@ class Metiers(commands.Cog):
         view = MetiersView(profession_options, self.file_path, self)
 
         if self.suggestion_box_message_id:
-            # Try to edit the existing suggestion box
             try:
                 channel = interaction.channel
                 message = await channel.fetch_message(self.suggestion_box_message_id)
                 await message.edit(content="Choisissez une profession :", view=view)
             except discord.NotFound:
-                # If the message is not found, reset the message ID and create a new suggestion box
                 self.suggestion_box_message_id = None
 
         if not self.suggestion_box_message_id:
-            # Send a new suggestion box if no existing one is found
             suggestion_message = await interaction.response.send_message(
                 "Choisissez une profession :", view=view, fetch_response=True
             )
             self.suggestion_box_message_id = suggestion_message.id
-            await suggestion_message.pin()  # Pin the suggestion box
+            await suggestion_message.pin()
 
     async def move_suggestion_box_to_bottom(self, channel):
         if self.suggestion_box_message_id:
             try:
-                # Fetch the suggestion box message and repost it to the bottom
                 message = await channel.fetch_message(self.suggestion_box_message_id)
                 await message.delete()
                 suggestion_message = await channel.send(content="Choisissez une profession :", view=message.components[0])
@@ -73,7 +85,6 @@ class MetiersSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         selected_profession = self.values[0]
         try:
-            # Load data from the selected sheet
             df = pd.read_excel(self.file_path, sheet_name=selected_profession)
             formatted_data = "\n".join(
                 f"**Nom**: {row['Nom']} | **Serveur**: {row['Serveur']} | **Niveau métier**: {row['Niveau métier']} | **Classe**: {row['Classe']}"
@@ -88,11 +99,7 @@ class MetiersSelect(discord.ui.Select):
             embed.set_footer(
                 text="Astuce : Si un joueur n'est pas en ligne, ajoutez-le comme ami et vérifiez son statut en ligne."
             )
-
-            # Send the result publicly in the channel
             await interaction.response.send_message(embed=embed)
-
-            # Move the suggestion box to the bottom
             await self.cog.move_suggestion_box_to_bottom(interaction.channel)
         except Exception as e:
             await interaction.response.send_message(
