@@ -98,22 +98,21 @@ class PercoView(View):
     def __init__(self, claimed=False):
         super().__init__()
         self.claimed = claimed
-        if self.claimed:
-            # If already claimed, disable the button
-            self.add_item(Button(label="Réclamé ✔", style=discord.ButtonStyle.green, disabled=True))
-        else:
-            # If not claimed, add the interactive button
-            self.add_item(self.create_claim_button())
+        self.button = Button(label="Réclamé", style=discord.ButtonStyle.green)
+        self.add_item(self.button)
 
-    def create_claim_button(self):
-        """Create the claim button."""
-        return Button(label="Réclamé", style=discord.ButtonStyle.green, callback=self.claimed_button)
+        # Attach callback dynamically based on the claimed state
+        if claimed:
+            self.button.label = "Réclamé ✔"
+            self.button.disabled = True
+        else:
+            self.button.callback = self.claimed_button  # Set the callback for unclaimed button
 
     async def claimed_button(self, interaction: discord.Interaction):
+        """Callback for the claimed button."""
         self.claimed = True
-        button = self.children[0]  # Access the button
-        button.label = "Réclamé ✔"
-        button.disabled = True
+        self.button.label = "Réclamé ✔"
+        self.button.disabled = True
 
         # Update the state in the database
         conn = sqlite3.connect(DB_PATH)
@@ -127,6 +126,7 @@ class PercoView(View):
 
         await interaction.response.send_message(f"{interaction.user.mention} a réclamé le perco.", ephemeral=False)
         await interaction.message.edit(view=self)
+
 
 # Set up the cog
 async def setup(bot):
