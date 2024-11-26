@@ -14,7 +14,7 @@ class Metiers(commands.Cog):
     @app_commands.command(name="metiers", description="Afficher les professions disponibles")
     async def metiers(self, interaction: discord.Interaction):
         # Restrict command to specific server and channel
-        if interaction.guild.id != 1300093554064097400 or interaction.channel.id != 1248345019333611561:
+        if interaction.guild.id != 1248345019333611561 or interaction.channel.id != 1248345019333611561:
             await interaction.response.send_message(
                 "Cette commande n'est disponible que dans le canal **#║╟➢👷metiers**.",
                 ephemeral=True
