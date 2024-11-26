@@ -23,7 +23,10 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["discord_bot"]  # Database name
 collection = db["perco_messages"]  # Collection name
 
+
 class PercoAttack(commands.Cog):
+    """Cog for handling Perco attack features."""
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -46,6 +49,7 @@ class PercoAttack(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        """Handle messages containing images in a specific channel."""
         # Ignore messages from bots or messages without attachments
         if message.author.bot or not message.attachments:
             return
@@ -86,7 +90,10 @@ class PercoAttack(commands.Cog):
             # Delete the user's original message
             await message.delete()
 
+
 class PercoView(View):
+    """Custom view for handling Perco attack buttons."""
+
     def __init__(self, claimed=False):
         super().__init__()
         self.claimed = claimed
@@ -115,6 +122,7 @@ class PercoView(View):
 
         await interaction.response.send_message(f"{interaction.user.mention} a réclamé le perco.", ephemeral=False)
         await interaction.message.edit(view=self)
+
 
 # Set up the cog
 async def setup(bot):
