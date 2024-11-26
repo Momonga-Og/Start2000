@@ -3,6 +3,11 @@ from discord.ext import commands
 from discord.ui import View, Button
 from io import BytesIO
 import sqlite3
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Database setup
 DB_PATH = "conversation_history.db"
@@ -30,6 +35,7 @@ class PercoAttack(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         """Recreate views for persistent messages on bot startup."""
+        logger.info("Bot is ready. Recreating views from database...")
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT message_id, channel_id, claimed FROM perco_messages")
@@ -40,11 +46,12 @@ class PercoAttack(commands.Cog):
             channel = self.bot.get_channel(channel_id)
             if channel:
                 try:
+                    logger.info(f"Recreating view for message {message_id} in channel {channel_id}")
                     message = await channel.fetch_message(message_id)
                     view = PercoView(bool(claimed))
                     await message.edit(view=view)
                 except discord.NotFound:
-                    # If the message no longer exists, remove it from the database
+                    logger.warning(f"Message {message_id} not found. Removing from database.")
                     conn = sqlite3.connect(DB_PATH)
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM perco_messages WHERE message_id = ?", (message_id,))
@@ -58,7 +65,7 @@ class PercoAttack(commands.Cog):
             return
 
         # Check if the message is sent in the specific channel
-        if message.channel.id == 1247728782559809558:  # Replace with your channel ID
+        if message.channel.id == 1300093554797842523:  # Replace with your channel ID
             for attachment in message.attachments:
                 if attachment.content_type and attachment.content_type.startswith("image/"):
                     try:
@@ -85,8 +92,10 @@ class PercoAttack(commands.Cog):
                         )
                         conn.commit()
                         conn.close()
+                        logger.info(f"Saved message {reposted_message.id} in channel {reposted_message.channel.id} to database.")
 
                     except discord.errors.NotFound:
+                        logger.error(f"Failed to download attachment {attachment.filename}.")
                         await message.channel.send(
                             f"Erreur : Impossible de télécharger l'image `{attachment.filename}`. Lien non valide ou expiré.",
                             delete_after=10
@@ -123,10 +132,10 @@ class PercoView(View):
         )
         conn.commit()
         conn.close()
+        logger.info(f"Updated message {interaction.message.id} to claimed in database.")
 
         await interaction.response.send_message(f"{interaction.user.mention} a réclamé le perco.", ephemeral=False)
         await interaction.message.edit(view=self)
-
 
 # Set up the cog
 async def setup(bot):
