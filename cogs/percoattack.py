@@ -2,31 +2,26 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Button
 from io import BytesIO
-import sqlite3
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 import logging
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Database setup
-DB_PATH = "conversation_history.db"
+# MongoDB setup using environment variable
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("MongoDB URI not found in environment variables. Check your .env file.")
 
-def setup_database():
-    """Create the necessary table if it doesn't exist."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS perco_messages (
-        message_id INTEGER PRIMARY KEY,
-        channel_id INTEGER NOT NULL,
-        claimed INTEGER NOT NULL DEFAULT 0
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-setup_database()
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client["discord_bot"]  # Database name
+collection = db["perco_messages"]  # Collection name
 
 class PercoAttack(commands.Cog):
     def __init__(self, bot):
@@ -36,27 +31,18 @@ class PercoAttack(commands.Cog):
     async def on_ready(self):
         """Recreate views for persistent messages on bot startup."""
         logger.info("Bot is ready. Recreating views from database...")
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT message_id, channel_id, claimed FROM perco_messages")
-        rows = cursor.fetchall()
-        conn.close()
-
-        for message_id, channel_id, claimed in rows:
-            channel = self.bot.get_channel(channel_id)
+        messages = collection.find({"claimed": {"$exists": True}})
+        for message_data in messages:
+            channel = self.bot.get_channel(message_data["channel_id"])
             if channel:
                 try:
-                    logger.info(f"Recreating view for message {message_id} in channel {channel_id}")
-                    message = await channel.fetch_message(message_id)
-                    view = PercoView(bool(claimed))
+                    logger.info(f"Recreating view for message {message_data['message_id']} in channel {message_data['channel_id']}")
+                    message = await channel.fetch_message(message_data["message_id"])
+                    view = PercoView(message_data["claimed"])
                     await message.edit(view=view)
                 except discord.NotFound:
-                    logger.warning(f"Message {message_id} not found. Removing from database.")
-                    conn = sqlite3.connect(DB_PATH)
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM perco_messages WHERE message_id = ?", (message_id,))
-                    conn.commit()
-                    conn.close()
+                    logger.warning(f"Message {message_data['message_id']} not found. Removing from database.")
+                    collection.delete_one({"message_id": message_data["message_id"]})
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -83,15 +69,12 @@ class PercoAttack(commands.Cog):
                             view=view
                         )
 
-                        # Save the message state in the database
-                        conn = sqlite3.connect(DB_PATH)
-                        cursor = conn.cursor()
-                        cursor.execute(
-                            "INSERT INTO perco_messages (message_id, channel_id, claimed) VALUES (?, ?, ?)",
-                            (reposted_message.id, reposted_message.channel.id, 0)
-                        )
-                        conn.commit()
-                        conn.close()
+                        # Save the message state in MongoDB
+                        collection.insert_one({
+                            "message_id": reposted_message.id,
+                            "channel_id": reposted_message.channel.id,
+                            "claimed": False
+                        })
                         logger.info(f"Saved message {reposted_message.id} in channel {reposted_message.channel.id} to database.")
 
                     except discord.errors.NotFound:
@@ -123,15 +106,11 @@ class PercoView(View):
         self.button.label = "Réclamé ✔"
         self.button.disabled = True
 
-        # Update the state in the database
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE perco_messages SET claimed = 1 WHERE message_id = ?",
-            (interaction.message.id,)
+        # Update the state in the MongoDB
+        collection.update_one(
+            {"message_id": interaction.message.id},
+            {"$set": {"claimed": True}}
         )
-        conn.commit()
-        conn.close()
         logger.info(f"Updated message {interaction.message.id} to claimed in database.")
 
         await interaction.response.send_message(f"{interaction.user.mention} a réclamé le perco.", ephemeral=False)
