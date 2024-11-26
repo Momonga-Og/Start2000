@@ -65,7 +65,7 @@ class PercoAttack(commands.Cog):
             return
 
         # Check if the message is sent in the specific channel
-        if message.channel.id == 1300093554797842523:  # Replace with your channel ID
+        if message.channel.id == 1247728782559809558:  # Replace with your channel ID
             for attachment in message.attachments:
                 if attachment.content_type and attachment.content_type.startswith("image/"):
                     try:
