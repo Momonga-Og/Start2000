@@ -7,7 +7,7 @@ import os
 class Alerts(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_channel_id = 1247728738326679583
+        self.allowed_channel_id = 1247728738326679583  # Replace with your channel ID
 
     @app_commands.command(name="alert", description="Generate a report of notifications sent in this channel for the last 7 days.")
     async def alert(self, interaction: discord.Interaction):
@@ -20,25 +20,35 @@ class Alerts(commands.Cog):
         channel = interaction.channel
         now = datetime.utcnow()
         seven_days_ago = now - timedelta(days=7)
-        messages = await channel.history(after=seven_days_ago).flatten()
+
+        # Collect messages asynchronously
+        messages = []
+        async for message in channel.history(after=seven_days_ago):
+            messages.append(message)
 
         # Collect notification data
         notification_data = {}
         for message in messages:
-            if message.author.bot and message.mention_everyone or message.role_mentions:
+            if message.author.bot and (message.mention_everyone or message.role_mentions):
                 author = message.author
                 timestamp = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
                 roles_tagged = [role.name for role in message.role_mentions]
 
-                notification_data.setdefault(author.id, {
-                    "username": author.name,
-                    "roles_tagged": {},
-                    "timestamps": []
-                })
+                # Initialize user data
+                if author.id not in notification_data:
+                    notification_data[author.id] = {
+                        "username": author.name,
+                        "roles_tagged": {},
+                        "timestamps": []
+                    }
 
+                # Add timestamp
                 notification_data[author.id]["timestamps"].append(timestamp)
+
+                # Count roles tagged
                 for role in roles_tagged:
-                    notification_data[author.id]["roles_tagged"].setdefault(role, 0)
+                    if role not in notification_data[author.id]["roles_tagged"]:
+                        notification_data[author.id]["roles_tagged"][role] = 0
                     notification_data[author.id]["roles_tagged"][role] += 1
 
         # Generate the report
