@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from datetime import datetime, timedelta
 import os
+import re
 
 class Alerts(commands.Cog):
     def __init__(self, bot):
@@ -11,7 +12,7 @@ class Alerts(commands.Cog):
 
     @app_commands.command(name="alert", description="Generate a report of notifications sent in this channel for the last 7 days.")
     async def alert(self, interaction: discord.Interaction):
-        # Ensure the command is only used in the designated channel
+        # Ensure the command is only used in the specified channel
         if interaction.channel_id != self.allowed_channel_id:
             await interaction.response.send_message("This command can only be used in the designated channel.", ephemeral=True)
             return
@@ -34,22 +35,26 @@ class Alerts(commands.Cog):
             timestamp = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
             roles_tagged = [role.name for role in message.role_mentions]
 
+            # Extract additional information: attacker and outcome
+            attacker_match = re.search(r"Attacker:\s*(\w+)", message.content, re.IGNORECASE)
+            outcome_match = re.search(r"Outcome:\s*(Win|Loss)", message.content, re.IGNORECASE)
+            attacker = attacker_match.group(1) if attacker_match else "Unknown"
+            outcome = outcome_match.group(1) if outcome_match else "Not Specified"
+
             # Initialize data for the author if not already done
             if author.id not in notification_data:
                 notification_data[author.id] = {
                     "username": author.name,
-                    "roles_tagged": {},
-                    "timestamps": []
+                    "notifications": []
                 }
 
-            # Add the timestamp of the message
-            notification_data[author.id]["timestamps"].append(timestamp)
-
-            # Count the roles tagged
-            for role in roles_tagged:
-                if role not in notification_data[author.id]["roles_tagged"]:
-                    notification_data[author.id]["roles_tagged"][role] = 0
-                notification_data[author.id]["roles_tagged"][role] += 1
+            # Append notification details
+            notification_data[author.id]["notifications"].append({
+                "timestamp": timestamp,
+                "roles_tagged": roles_tagged,
+                "attacker": attacker,
+                "outcome": outcome
+            })
 
         # Generate the report
         report_filename = f"notification_report_{now.strftime('%Y%m%d_%H%M%S')}.txt"
@@ -59,14 +64,12 @@ class Alerts(commands.Cog):
             else:
                 for user_id, data in notification_data.items():
                     report_file.write(f"User: {data['username']}\n")
-                    report_file.write(f"Notifications sent: {len(data['timestamps'])}\n")
-                    report_file.write("Roles tagged:\n")
-                    for role, count in data["roles_tagged"].items():
-                        report_file.write(f"  {role}: {count} times\n")
-                    report_file.write("Timestamps:\n")
-                    for timestamp in data["timestamps"]:
-                        report_file.write(f"  {timestamp}\n")
-                    report_file.write("\n")
+                    report_file.write(f"Total Notifications Sent: {len(data['notifications'])}\n\n")
+                    for notification in data["notifications"]:
+                        report_file.write(f"  - Timestamp: {notification['timestamp']}\n")
+                        report_file.write(f"    Roles Tagged: {', '.join(notification['roles_tagged']) if notification['roles_tagged'] else 'None'}\n")
+                        report_file.write(f"    Attacker: {notification['attacker']}\n")
+                        report_file.write(f"    Outcome: {notification['outcome']}\n\n")
 
         # Notify the user and attach the file
         await interaction.response.send_message("Report generated:", file=discord.File(report_filename), ephemeral=True)
