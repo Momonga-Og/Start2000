@@ -64,14 +64,14 @@ class AlertActionView(View):
         await interaction.response.send_modal(modal)
 
     async def mark_as_won(self, interaction: discord.Interaction):
-        await self.mark_alert(interaction, "Gagn\u00e9e", discord.Color.green())
+        await self.mark_alert(interaction, "Gagnée", discord.Color.green())
 
     async def mark_as_lost(self, interaction: discord.Interaction):
         await self.mark_alert(interaction, "Perdue", discord.Color.red())
 
     async def mark_alert(self, interaction: discord.Interaction, status: str, color: discord.Color):
         if self.is_locked:
-            await interaction.response.send_message("Cette alerte a d\u00e9j\u00e0 \u00e9t\u00e9 marqu\u00e9e.", ephemeral=True)
+            await interaction.response.send_message("Cette alerte a déjà été marquée.", ephemeral=True)
             return
 
         self.is_locked = True
@@ -81,10 +81,10 @@ class AlertActionView(View):
 
         embed = self.message.embeds[0]
         embed.color = color
-        embed.add_field(name="Statut", value=f"L'alerte a \u00e9t\u00e9 marqu\u00e9e comme **{status}** par {interaction.user.mention}.", inline=False)
+        embed.add_field(name="Statut", value=f"L'alerte a été marquée comme **{status}** par {interaction.user.mention}.", inline=False)
 
         await self.message.edit(embed=embed)
-        await interaction.response.send_message(f"Alerte marqu\u00e9e comme **{status}** avec succ\u00e8s.", ephemeral=True)
+        await interaction.response.send_message(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
 
 
 class GuildPingView(View):
@@ -118,13 +118,13 @@ class GuildPingView(View):
 
                 role = interaction.guild.get_role(alliance['role_id'])
                 if not role:
-                    await interaction.response.send_message(f"R\u00f4le pour {alliance['name']} introuvable !", ephemeral=True)
+                    await interaction.response.send_message(f"Rôle pour {alliance['name']} introuvable !", ephemeral=True)
                     return
 
                 alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
                 embed = discord.Embed(
-                    title="\ud83d\udd14 Alerte envoy\u00e9e !",
-                    description=f"**{interaction.user.mention}** a d\u00e9clench\u00e9 une alerte pour **{alliance['name']}**.",
+                    title="\ud83d\udd14 Alerte envoyée !",
+                    description=f"**{interaction.user.mention}** a déclenché une alerte pour **{alliance['name']}**.",
                     color=discord.Color.red()
                 )
                 embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
@@ -135,7 +135,7 @@ class GuildPingView(View):
                 await sent_message.edit(view=view)
 
                 await interaction.response.send_message(
-                    f"Alerte envoy\u00e9e \u00e0 {alliance['name']} dans le canal d'alerte !", ephemeral=True
+                    f"Alerte envoyée à {alliance['name']} dans le canal d'alerte !", ephemeral=True
                 )
 
             except Exception as e:
@@ -149,11 +149,17 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-     @app_commands.command(name="set_alliance", description="Configure a new alliance")
+    @app_commands.command(name="set_alliance", description="Configure a new alliance")
     async def set_alliance(self, interaction: discord.Interaction, logo: str, name: str, role: str):
-        # Logic for handling the slash command
-        await interaction.response.send_message(f"Alliance `{name}` with logo `{logo}` and role `{role}` has been set.", ephemeral=True)
-        
+        alliances_collection.insert_one({
+            "logo": logo,
+            "name": name,
+            "role_id": int(role)
+        })
+        await interaction.response.send_message(
+            f"Alliance `{name}` with logo `{logo}` and role `{role}` has been set.", ephemeral=True
+        )
+
     @commands.Cog.listener()
     async def on_ready(self):
         print("AdminCommands ready.")
@@ -176,15 +182,8 @@ class StartGuildCog(commands.Cog):
 
         view = GuildPingView(self.bot)
         message_content = (
-            "**\ud83c\udfaf Panneau d'Alerte DEF**\n\n"
-            "Bienvenue sur le Panneau d'Alerte D\u00e9fense\u202f! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte \u00e0 votre \u00e9quipe. "
-            "Chaque bouton correspond \u00e0 une guilde, et le fait d'appuyer dessus notifiera tous les membres associ\u00e9s \u00e0 cette guilde.\n\n"
-            "\ud83d\udca1 **Comment l'utiliser :**\n"
-            "1\ufe0f\u20e3 Cliquez sur le bouton de votre guilde.\n"
-            "2\ufe0f\u20e3 V\u00e9rifiez le canal d'alerte pour les mises \u00e0 jour.\n"
-            "3\ufe0f\u20e3 Ajoutez des notes aux alertes si n\u00e9cessaire.\n\n"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            "\ud83d\udd3f **Guildes Disponibles** \ud83d\udd3f\n"
+            "**🎯 Panneau d'Alerte DEF**\n\n"
+            "Cliquez sur le bouton de votre guilde pour envoyer une alerte."
         )
 
         async for message in channel.history(limit=50):
