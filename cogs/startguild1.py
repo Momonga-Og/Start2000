@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from discord.ui import View, Button, Modal, TextInput
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -148,15 +149,10 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.slash_command(name="set_alliance", description="Configure a new alliance")
-    @commands.has_permissions(administrator=True)
-    async def set_alliance(self, ctx, name: str, logo: str, role: discord.Role):
-        alliances_collection.update_one(
-            {"name": name},
-            {"$set": {"logo": logo, "role_id": role.id}},
-            upsert=True
-        )
-        await ctx.respond(f"Alliance '{name}' configured successfully with logo '{logo}' and role {role.mention}.")
+     @app_commands.command(name="set_alliance", description="Configure a new alliance")
+    async def set_alliance(self, interaction: discord.Interaction, logo: str, name: str, role: str):
+        # Logic for handling the slash command
+        await interaction.response.send_message(f"Alliance `{name}` with logo `{logo}` and role `{role}` has been set.", ephemeral=True)
         
     @commands.Cog.listener()
     async def on_ready(self):
