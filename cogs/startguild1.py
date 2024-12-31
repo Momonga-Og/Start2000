@@ -71,6 +71,7 @@ class StartGuild1(commands.Cog):
 
         await ctx.send(response)
 
-# Add cog to bot
-def setup(bot):
-    bot.add_cog(StartGuild1(bot))
+
+async def setup(bot):
+    # Correctly await the add_cog function
+    await bot.add_cog(StartGuild1(bot))
