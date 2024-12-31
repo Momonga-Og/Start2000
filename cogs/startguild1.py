@@ -25,7 +25,6 @@ ALERT_MESSAGES = [
     "\u26a0\ufe0f {role}, mobilisez votre \u00e9quipe pour d\u00e9fendre !",
 ]
 
-
 class AlertActionView(View):
     def __init__(self, bot: commands.Bot, message: discord.Message):
         super().__init__(timeout=None)
@@ -86,7 +85,6 @@ class AlertActionView(View):
         await self.message.edit(embed=embed)
         await interaction.response.send_message(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
 
-
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
@@ -144,7 +142,6 @@ class GuildPingView(View):
 
         return callback
 
-
 class AdminCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -163,7 +160,6 @@ class AdminCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("AdminCommands ready.")
-
 
 class StartGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -209,7 +205,6 @@ class StartGuildCog(commands.Cog):
             print("Alert channel permissions updated.")
 
         print("Bot is ready.")
-
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(StartGuildCog(bot))
