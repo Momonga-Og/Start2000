@@ -156,7 +156,7 @@ class GuildPingView(View):
                     description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
                     color=discord.Color.red()
                 )
-                embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+                embed.set_thumbnail(url=interaction.user.display_avatar.url)
                 embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
                 sent_message = await alert_channel.send(content=alert_message, embed=embed)
@@ -190,26 +190,27 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = (
-    "**🎯 Panneau d'Alerte DEF**\n\n"
-    "Bienvenue sur le Panneau d'Alerte Défense ! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte à votre équipe. "
-    "Chaque bouton correspond à une guilde, et le fait d'appuyer dessus notifiera tous les membres associés à cette guilde.\n\n"
-    "💡 **Comment l'utiliser :**\n"
-    "1️⃣ Cliquez sur le bouton de votre guilde.\n"
-    "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
-    "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "⬇️ **Guildes Disponibles** ⬇️\n"
-)
-
+        embed = discord.Embed(
+            title="🎯 Panneau d'Alerte DEF",
+            description=(
+                "Bienvenue sur le **Panneau d'Alerte Défense** ! Utilisez les boutons ci-dessous pour envoyer une alerte "
+                "à votre guilde. Cliquez simplement sur le bouton de votre guilde pour notifier ses membres.\n\n"
+                "**💡 Instructions :**\n"
+                "1️⃣ Cliquez sur le bouton correspondant à votre guilde.\n"
+                "2️⃣ Suivez les mises à jour dans le canal d'alerte.\n"
+                "3️⃣ Ajoutez des notes si nécessaire.\n\n"
+                "⬇️ **Guildes Disponibles** ⬇️"
+            ),
+            color=discord.Color.blue()
+        )
 
         async for message in channel.history(limit=50):
             if message.pinned:
-                await message.edit(content=message_content, view=view)
+                await message.edit(embed=embed, view=view)
                 print("Panel updated.")
                 return
 
-        new_message = await channel.send(content=message_content, view=view)
+        new_message = await channel.send(embed=embed, view=view)
         await new_message.pin()
         print("Panel created and pinned successfully.")
 
