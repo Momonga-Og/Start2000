@@ -8,7 +8,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 */5 * * *'  # Runs every 5 hours
+    - cron: '30 */5 * * *'  # Triggers every 5 hours and 30 minutes
 
 jobs:
   deploy:
