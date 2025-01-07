@@ -3,13 +3,41 @@ from discord.ext import commands
 
 # Role data
 ROLE_DATA = {
-    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
-    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
-    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
-    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
-    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
-    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
-    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
+    "Darkness": {
+        "emoji": "<:Darkness:1307418763276324944>",
+        "role_id": 1300093554064097407,
+        "role_name": "Darkness",
+    },
+    "GTO": {
+        "emoji": "<:GTO:1307418692992237668>",
+        "role_id": 1300093554080612363,
+        "role_name": "GTO",
+    },
+    "Aversion": {
+        "emoji": "<:aversion:1307418759002198086>",
+        "role_id": 1300093554064097409,
+        "role_name": "Aversion",
+    },
+    "LMDF": {
+        "emoji": "<:lmdf:1307418765142786179>",
+        "role_id": 1300093554080612364,
+        "role_name": "LMDF",
+    },
+    "Notorious": {
+        "emoji": "<:notorious:1307418766266728500>",
+        "role_id": 1300093554064097406,
+        "role_name": "Notorious",
+    },
+    "Percophile": {
+        "emoji": "<:percophile:1307418769764651228>",
+        "role_id": 1300093554080612362,
+        "role_name": "Percophile",
+    },
+    "Tilisquad": {
+        "emoji": "<:tilisquad:1307418771882905600>",
+        "role_id": 1300093554080612367,
+        "role_name": "Tilisquad",
+    },
 }
 
 class RoleSelectionView(discord.ui.View):
