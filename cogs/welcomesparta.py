@@ -22,10 +22,10 @@ class WelcomeSparta(commands.Cog):
                 try:
                     # Send public welcome message
                     welcome_message = (
-                        f"🎉 Bienvenue {member.mention} à Alliance Start ! 🎉\n"
-                        "Nous sommes ravis de t'avoir parmi nous ! N'oublie pas de consulter nos canaux et profite de ton séjour. 🎊"
+                        f"🎉 Welcome {member.mention} to {member.guild.name}! 🎉\n"
+                        "We're thrilled to have you here! Make sure to check out our channels and enjoy your stay. 🎊"
                     )
-                    image_url = "https://github.com/Momonga-Og/Start2000/blob/main/Alliance%20Start2000.png?raw=true"
+                    image_url = "https://github.com/Momonga-Og/Spectra/blob/db4e92dd8deaba15608bd0856f265f742097fc72/th.jpeg?raw=true"
                     embed = discord.Embed(description=welcome_message, color=discord.Color.blue())
                     embed.set_image(url=image_url)
                     await public_channel.send(embed=embed)
