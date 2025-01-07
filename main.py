@@ -139,7 +139,7 @@ EXTENSIONS = [
     'cogs.relocate', 'cogs.watermark', 'cogs.talk', 'cogs.role',
     'cogs.watermark_user', 'cogs.metiers',
     'cogs.image_converter', 'cogs.startguild',
-    'cogs.welcome','cogs.alerts',
+    'cogs.welcomesparta','cogs.alerts',
     'cogs.super', 'cogs.translator', 'cogs.voice',
 ]
 
