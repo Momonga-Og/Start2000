@@ -13,7 +13,6 @@ GUILD_EMOJIS_ROLES = {
     "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
     "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
     "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
-    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
     "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
     "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
     "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
