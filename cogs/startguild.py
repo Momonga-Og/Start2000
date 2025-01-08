@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands
+import asyncio
 from .config import GUILD_ID, PING_DEF_CHANNEL_ID, ALERTE_DEF_CHANNEL_ID
 from .views import GuildPingView
-
 
 class StartGuildCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.cooldowns = {}  # Track cooldowns for guilds
 
     async def ensure_panel(self):
         """
@@ -76,6 +77,35 @@ class StartGuildCog(commands.Cog):
             print("✅ Alert channel permissions updated.")
 
         print("🚀 Bot is ready and operational.")
+
+    async def handle_ping(self, guild_id):
+        """
+        Handle the ping functionality with a cooldown.
+        """
+        if self.cooldowns.get(guild_id):
+            return False  # Guild is on cooldown
+
+        self.cooldowns[guild_id] = True
+        await asyncio.sleep(10)  # Cooldown interval
+        self.cooldowns[guild_id] = False
+        return True
+
+    @commands.command(name="ping_guild")
+    async def ping_guild(self, ctx, guild_name: str):
+        """
+        Command to ping a guild with a cooldown.
+        """
+        guild = self.bot.get_guild(GUILD_ID)
+        if not guild:
+            await ctx.send("⚠️ Guild not found. Check the GUILD_ID in your configuration.")
+            return
+
+        if not await self.handle_ping(guild_name):
+            await ctx.send(f"⏳ Please wait before pinging {guild_name} again.")
+            return
+
+        # Ping logic goes here (e.g., notify the channel or specific roles)
+        await ctx.send(f"✅ {guild_name} has been pinged!")
 
 # Async function to add the cog to the bot
 async def setup(bot: commands.Bot):
