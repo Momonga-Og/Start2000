@@ -1,42 +1,7 @@
 import discord
 from discord.ext import commands
-from discord.ui import Button, View
 from .config import GUILD_ID, PING_DEF_CHANNEL_ID, ALERTE_DEF_CHANNEL_ID
-
-
-class GuildPingView(View):
-    def __init__(self, bot: commands.Bot):
-        super().__init__(timeout=None)  # Timeout is None for persistent views
-        self.bot = bot
-        self.cooldowns = {}  # A dictionary to store cooldowns for buttons
-
-        # Adding GTO button
-        self.add_item(Button(label="GTO", style=discord.ButtonStyle.red, custom_id="gto"))
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """
-        Check if interaction is valid (e.g., not on cooldown).
-        """
-        if "cooldown" in self.cooldowns:
-            remaining_time = self.cooldowns["cooldown"] - discord.utils.utcnow().timestamp()
-            if remaining_time > 0:
-                await interaction.response.send_message(
-                    f"⏳ Cooldown active! Please wait {int(remaining_time)} seconds before trying again.",
-                    ephemeral=True
-                )
-                return False
-        return True
-
-    @discord.ui.button(label="GTO", style=discord.ButtonStyle.danger, custom_id="gto")
-    async def gto_button(self, button: Button, interaction: discord.Interaction):
-        """
-        Handle GTO button click.
-        """
-        now = discord.utils.utcnow().timestamp()
-        self.cooldowns["cooldown"] = now + 120  # Set cooldown for 2 minutes
-
-        # Example action: Send a message
-        await interaction.response.send_message("🚨 GTO alert sent!", ephemeral=False)
+from .views import GuildPingView
 
 
 class StartGuildCog(commands.Cog):
@@ -111,7 +76,6 @@ class StartGuildCog(commands.Cog):
             print("✅ Alert channel permissions updated.")
 
         print("🚀 Bot is ready and operational.")
-
 
 # Async function to add the cog to the bot
 async def setup(bot: commands.Bot):
