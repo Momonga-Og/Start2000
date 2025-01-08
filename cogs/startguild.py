@@ -40,7 +40,7 @@ class StartGuildCog(commands.Cog):
             ),
             color=discord.Color.blurple()  # Using blurple for a modern, Discord-friendly color.
         )
-        embed.set_footer(text="Alliance START | Alert System", icon_url="https://example.com/icon.png")
+        embed.set_footer(text="Alliance START | Alert System", icon_url="https://github.com/Momonga-Og/Start2000/blob/cc0b2ecde19684cb4196c2dab3a1b490439b14ae/standard%20(1).gif")
 
         # Check for an existing pinned message to update it
         async for message in channel.history(limit=50):
