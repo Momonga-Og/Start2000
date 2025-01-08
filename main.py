@@ -3,8 +3,6 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
-import sqlite3
-import sys
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -14,67 +12,8 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-OWNER_ID = 486652069831376943  
+OWNER_ID = 486652069831376943  # Replace with your Discord user ID
 TOKEN = os.getenv('DISCORD_TOKEN')
-
-LOCK_FILE = 'bot.lock'
-
-# Function to check if the bot is already running
-def check_lock():
-    if os.path.exists(LOCK_FILE):
-        logger.info("Bot is already running. Exiting...")
-        sys.exit()
-
-# Function to create a lock file
-def create_lock():
-    with open(LOCK_FILE, 'w') as f:
-        f.write('locked')
-
-# Function to remove the lock file
-def remove_lock():
-    if os.path.exists(LOCK_FILE):
-        os.remove(LOCK_FILE)
-
-# Database setup: Initialize SQLite for conversation history
-def init_db():
-    db_path = 'conversation_history.db'
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS conversation (
-                        user_id INTEGER, 
-                        prompt TEXT, 
-                        response TEXT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )''')
-    conn.commit()
-    conn.close()
-
-# Insert conversation data into the database
-def insert_conversation(user_id, prompt, response):
-    db_path = 'conversation_history.db'
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''INSERT INTO conversation (user_id, prompt, response) VALUES (?, ?, ?)''', 
-                   (user_id, prompt, response))
-    conn.commit()
-    conn.close()
-
-# Initialize database on bot start
-init_db()
-
-def read_memory_file():
-    logger.info("Attempting to read memory.txt...")
-    try:
-        with open('memory.txt', 'r') as f:
-            content = f.read()
-            logger.info("Memory file read successfully.")
-            return content
-    except FileNotFoundError:
-        logger.error("Memory file not found.")
-        return None
-    except Exception as e:
-        logger.error(f"An error occurred while reading the memory file: {e}")
-        return None
 
 @bot.event
 async def on_ready():
@@ -92,21 +31,12 @@ async def sync_commands():
 
 @bot.command(name='memory')
 async def memory_command(ctx):
-    memory_content = read_memory_file()
-    if memory_content:
-        await ctx.send(f"Memory:\n```\n{memory_content}\n```")
-    else:
-        await ctx.send("Could not read memory.")
+    await ctx.send("Memory management has been removed from this bot.")
 
 @bot.event
 async def on_message(message: discord.Message):
-    # Check if the message is from a user (not the bot itself)
     if message.author != bot.user:
-        prompt = message.content
-        response = "This is a placeholder response"  # Replace with actual bot logic if needed
-        # Save conversation in the database
-        insert_conversation(message.author.id, prompt, response)
-        logger.info(f"Stored conversation for user {message.author.id}: {prompt} -> {response}")
+        logger.info(f"Message from {message.author}: {message.content}")
 
     if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
         await forward_dm(message)
@@ -131,7 +61,6 @@ async def on_close():
     await close_sessions()
 
 async def close_sessions():
-    # If you need to handle any special cleanup or final database writes, do it here
     logger.info("Performing cleanup before closing...")
 
 EXTENSIONS = [
@@ -152,9 +81,6 @@ async def load_extensions():
             logger.exception(f"Failed to load extension {extension}")
 
 async def main():
-    check_lock()  # Check for existing lock
-    create_lock()  # Create a lock file
-
     async with bot:
         await load_extensions()
         if not TOKEN:
@@ -166,15 +92,11 @@ async def main():
             logger.error("Invalid token")
         except Exception as e:
             logger.exception("Failed to start the bot")
-        finally:
-            remove_lock()  # Ensure lock is removed when done
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
-        remove_lock()  # Clean up on exit
     except Exception as e:
         logger.exception("Bot encountered an error and stopped")
-        remove_lock()  # Clean up on error
