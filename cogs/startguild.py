@@ -78,16 +78,16 @@ class StartGuildCog(commands.Cog):
 
         print("🚀 Bot is ready and operational.")
 
-    async def handle_ping(self, guild_id):
+    async def handle_ping(self, guild_name):
         """
         Handle the ping functionality with a cooldown.
         """
-        if self.cooldowns.get(guild_id):
+        if self.cooldowns.get(guild_name):
             return False  # Guild is on cooldown
 
-        self.cooldowns[guild_id] = True
-        await asyncio.sleep(10)  # Cooldown interval
-        self.cooldowns[guild_id] = False
+        self.cooldowns[guild_name] = True
+        await asyncio.sleep(10)  # Cooldown interval (10 seconds)
+        self.cooldowns[guild_name] = False
         return True
 
     @commands.command(name="ping_guild")
@@ -100,12 +100,13 @@ class StartGuildCog(commands.Cog):
             await ctx.send("⚠️ Guild not found. Check the GUILD_ID in your configuration.")
             return
 
+        # Check and enforce the cooldown
         if not await self.handle_ping(guild_name):
-            await ctx.send(f"⏳ Please wait before pinging {guild_name} again.")
+            await ctx.send(f"⏳ Veuillez attendre avant de ping à nouveau la guilde {guild_name}.")
             return
 
-        # Ping logic goes here (e.g., notify the channel or specific roles)
-        await ctx.send(f"✅ {guild_name} has been pinged!")
+        # Logic for sending a ping notification (to be implemented)
+        await ctx.send(f"✅ La guilde {guild_name} a été pingée !")
 
 # Async function to add the cog to the bot
 async def setup(bot: commands.Bot):
